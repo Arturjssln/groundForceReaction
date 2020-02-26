@@ -3215,6 +3215,111 @@
 						<!--All properties of this object have their default values.-->
 					</TendonForceLengthCurve>
 				</Millard2012EquilibriumMuscle>
+				<!-- Contact point on legs where the force will be applied -->
+				<ContactPointOnPlane name="contact_1_l">
+					<!--Flag indicating whether the force is applied or not. If true the forceis applied to the MultibodySystem otherwise the force is not applied.NOTE: Prior to OpenSim 4.0, this behavior was controlled by the 'isDisabled' property, where 'true' meant that force was not being applied. Thus, if 'isDisabled' is true, then 'appliesForce` is false.-->
+					<appliesForce>true</appliesForce>
+					<!--optimal force of the contact (reference)-->
+					<optimal_force>10</optimal_force>
+					<!--static friction coefficient, default: 0.8-->
+					<static_friction>0.8</static_friction>
+					<!--kinetic friction coefficient, default: 0.5-->
+					<kinetic_friction>0.5</kinetic_friction>
+					<!--tolerance on point to plane distance, default: -1 (no effect)-->
+					<contact_tolerance>-1</contact_tolerance>
+					<!--size of the contact transition zone, default: 0.01-->
+					<contact_transition_zone>0.10000000000000001</contact_transition_zone>
+					<!--transition velocity (static->kinetic regime), default: 0.1-->
+					<v_trans>0.1</v_trans>
+					<!--name of the plane body-->
+					<plane_body>ground</plane_body>
+					<!--origin of the plane in plane body-->
+					<plane_origin>0 0 0</plane_origin>
+					<!--normal of the plane in plane body-->
+					<plane_normal>0 1 0</plane_normal>
+					<!--name of the point body-->
+					<point_body>calcn_l_geom_1</point_body>
+					<!--location of the point in point body-->
+					<point_location>-0.10000000000000001 -0.10000000000000001 -0</point_location>
+				</ContactPointOnPlane>
+				<ContactPointOnPlane name="contact_2_l">
+					<!--Flag indicating whether the force is applied or not. If true the forceis applied to the MultibodySystem otherwise the force is not applied.NOTE: Prior to OpenSim 4.0, this behavior was controlled by the 'isDisabled' property, where 'true' meant that force was not being applied. Thus, if 'isDisabled' is true, then 'appliesForce` is false.-->
+					<appliesForce>true</appliesForce>
+					<!--optimal force of the contact (reference)-->
+					<optimal_force>10</optimal_force>
+					<!--static friction coefficient, default: 0.8-->
+					<static_friction>0.5</static_friction>
+					<!--kinetic friction coefficient, default: 0.5-->
+					<kinetic_friction>0.40000000000000002</kinetic_friction>
+					<!--tolerance on point to plane distance, default: -1 (no effect)-->
+					<contact_tolerance>-1</contact_tolerance>
+					<!--size of the contact transition zone, default: 0.01-->
+					<contact_transition_zone>0.10000000000000001</contact_transition_zone>
+					<!--transition velocity (static->kinetic regime), default: 0.1-->
+					<v_trans>0.001</v_trans>
+					<!--name of the plane body-->
+					<plane_body>ground</plane_body>
+					<!--origin of the plane in plane body-->
+					<plane_origin>0 0 0</plane_origin>
+					<!--normal of the plane in plane body-->
+					<plane_normal>0 1 0</plane_normal>
+					<!--name of the point body-->
+					<point_body>toes_l_geom_1</point_body>
+					<!--location of the point in point body-->
+					<point_location>0.10000000000000001 -0.10000000000000001 -0</point_location>
+				</ContactPointOnPlane>
+				<ContactPointOnPlane name="contact_1_r">
+					<!--Flag indicating whether the force is applied or not. If true the forceis applied to the MultibodySystem otherwise the force is not applied.NOTE: Prior to OpenSim 4.0, this behavior was controlled by the 'isDisabled' property, where 'true' meant that force was not being applied. Thus, if 'isDisabled' is true, then 'appliesForce` is false.-->
+					<appliesForce>true</appliesForce>
+					<!--optimal force of the contact (reference)-->
+					<optimal_force>10</optimal_force>
+					<!--static friction coefficient, default: 0.8-->
+					<static_friction>0.8</static_friction>
+					<!--kinetic friction coefficient, default: 0.5-->
+					<kinetic_friction>0.5</kinetic_friction>
+					<!--tolerance on point to plane distance, default: -1 (no effect)-->
+					<contact_tolerance>-1</contact_tolerance>
+					<!--size of the contact transition zone, default: 0.01-->
+					<contact_transition_zone>0.10000000000000001</contact_transition_zone>
+					<!--transition velocity (static->kinetic regime), default: 0.1-->
+					<v_trans>0.1</v_trans>
+					<!--name of the plane body-->
+					<plane_body>ground</plane_body>
+					<!--origin of the plane in plane body-->
+					<plane_origin>0 0 0</plane_origin>
+					<!--normal of the plane in plane body-->
+					<plane_normal>0 1 0</plane_normal>
+					<!--name of the point body-->
+					<point_body>calcn_r_geom_1</point_body>
+					<!--location of the point in point body-->
+					<point_location>-0.10000000000000001 -0.10000000000000001 -0</point_location>
+				</ContactPointOnPlane>
+				<ContactPointOnPlane name="contact_2_r">
+					<!--Flag indicating whether the force is applied or not. If true the forceis applied to the MultibodySystem otherwise the force is not applied.NOTE: Prior to OpenSim 4.0, this behavior was controlled by the 'isDisabled' property, where 'true' meant that force was not being applied. Thus, if 'isDisabled' is true, then 'appliesForce` is false.-->
+					<appliesForce>true</appliesForce>
+					<!--optimal force of the contact (reference)-->
+					<optimal_force>10</optimal_force>
+					<!--static friction coefficient, default: 0.8-->
+					<static_friction>0.5</static_friction>
+					<!--kinetic friction coefficient, default: 0.5-->
+					<kinetic_friction>0.40000000000000002</kinetic_friction>
+					<!--tolerance on point to plane distance, default: -1 (no effect)-->
+					<contact_tolerance>-1</contact_tolerance>
+					<!--size of the contact transition zone, default: 0.01-->
+					<contact_transition_zone>0.10000000000000001</contact_transition_zone>
+					<!--transition velocity (static->kinetic regime), default: 0.1-->
+					<v_trans>0.001</v_trans>
+					<!--name of the plane body-->
+					<plane_body>ground</plane_body>
+					<!--origin of the plane in plane body-->
+					<plane_origin>0 0 0</plane_origin>
+					<!--normal of the plane in plane body-->
+					<plane_normal>0 1 0</plane_normal>
+					<!--name of the point body-->
+					<point_body>toes_r_geom_1</point_body>
+					<!--location of the point in point body-->
+					<point_location>0.10000000000000001 -0.10000000000000001 -0</point_location>
+				</ContactPointOnPlane>
 			</objects>
 			<groups />
 		</ForceSet>
