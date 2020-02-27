@@ -3215,7 +3215,6 @@
 						<!--All properties of this object have their default values.-->
 					</TendonForceLengthCurve>
 				</Millard2012EquilibriumMuscle>
-				</ContactPointOnPlane>
 			</objects>
 			<groups />
 		</ForceSet>
