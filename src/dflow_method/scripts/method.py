@@ -11,7 +11,6 @@ model_file = os.path.abspath(
 model = opensim.Model(model_file)
 state = model.initSystem()
 coordinate_set = model.updCoordinateSet()
-ground = model.updGround()
 pelvis = model.updBodySet().get('pelvis')
 
 # model coordinates for this specific motion
@@ -43,7 +42,6 @@ for i in range(ik_data.shape[0]):
 
     model.realizePosition(state)
 
-    # https://simtk.org/api_docs/opensim/api_docs/classOpenSim_1_1Frame.html
     # https://simtk.org/api_docs/opensim/api_docs/classOpenSim_1_1Frame.html
     # get transformation of pelvis in ground frame
     X_PG = pelvis.getTransformInGround(state)

@@ -3,13 +3,11 @@
 # author: Dimitar Stanev <jimstanev@gmail.com>
 ##
 import re
-import os
 import opensim
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
-from matplotlib.offsetbox import AnchoredText
 
 
 def osim_array_to_list(array):
