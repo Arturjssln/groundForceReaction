@@ -151,3 +151,19 @@ def plot_sto_file(file_name, plot_file, plots_per_row=4, pattern=None,
             fig.tight_layout()
             pdf.savefig(fig)
             plt.close()
+
+
+def foot_on_ground(markers, thresholds):
+    """Return True if foot with Parameters given are is on the groud
+
+    Parameters
+    ----------
+    markers: Array
+        Array with markers value
+    thresholds: Array
+        Array with thresolhd values (if marker < threshold => it is on ground)
+    """
+    for marker_value, threshold in zip(markers, thresholds):
+        if markers[marker_value][1] < threshold:
+            return True
+    return False
