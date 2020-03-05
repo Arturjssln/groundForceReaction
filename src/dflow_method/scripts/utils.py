@@ -3,6 +3,7 @@
 # author: Dimitar Stanev <jimstanev@gmail.com>
 ##
 import re
+import os, sys
 import opensim
 import numpy as np
 import pandas as pd
@@ -153,17 +154,52 @@ def plot_sto_file(file_name, plot_file, plots_per_row=4, pattern=None,
             plt.close()
 
 
-def foot_on_ground(markers, thresholds):
-    """Return True if foot with Parameters given are is on the groud
+def foot_on_ground(left_state, right_state, thresholds):
+    """Return(Bool, Bool) that determines if each foot is on the floor
 
     Parameters
     ----------
-    markers: Array
-        Array with markers value
-    thresholds: Array
-        Array with thresolhd values (if marker < threshold => it is on ground)
+    left_state: List(Tuples)
+        Tuples containing (position, velocity)
+        Each element of the list correspond to a body
+    right_state: List(Tuples)
+        Tuples containing (position, velocity)
+        Each element of the list correspond to a body
+    thresholds:
+        Tuples containing (position, velocity)
+        Each element of the list correspond to a body
     """
-    for marker_value, threshold in zip(markers, thresholds):
-        if markers[marker_value][1] < threshold:
-            return True
-    return False
+    out_left = []
+    out_right = []
+    for left_body, right_body, threshold in zip(left_state, right_state, thresholds):
+        out_left.append((left_body[0] < threshold[0] and left_body[1] < threshold[1], left_body[2]))
+        out_right.append((right_body[0] < threshold[0] and right_body[1] < threshold[1], right_body[2]))
+    return (out_left, out_right)
+
+def import_from_storage(parentDir):
+    # model file
+    model_file = os.path.abspath(
+        os.path.join(parentDir, 'scale/model_scaled.osim'))
+
+    # model coordinates for this specific motion
+    inverse_kinematics_file = os.path.abspath(
+        os.path.join(parentDir, 'inverse_kinematics/task_InverseKinematics.mot'))
+    ik_data = read_from_storage(model_file, inverse_kinematics_file)
+
+    # this file contains the results from inverse dynamics ignoring the
+    # ground reaction forces in the calculation.
+    inverse_dynamics_file = os.path.abspath(
+        os.path.join(parentDir, 'inverse_dynamics/task_InverseDynamics.sto'))
+    id_data = read_from_storage(model_file, inverse_dynamics_file)
+
+    # this file contains the generalized speeds
+    velocity_file = os.path.abspath(
+        os.path.join(parentDir, 'results/model_scaled_Kinematics_u.sto'))
+    u = read_from_storage(model_file, velocity_file)
+
+    # this file contains the generalized acceleration
+    acceleration_file = os.path.abspath(
+        os.path.join(parentDir, 'results/model_scaled_Kinematics_dudt.sto'))
+    a = read_from_storage(model_file, acceleration_file)
+
+    return (model_file, ik_data, id_data, u, a)

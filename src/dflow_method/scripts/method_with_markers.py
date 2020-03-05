@@ -1,11 +1,10 @@
 # Implementation of DFLOW ground reaction force prediction.
 #
-# author: Artur Jesslen <artur.jesslen@epfl.ch>
 ##
 import os, sys
 import opensim
-from utils import *
-import matplotlib.pyplot as plt
+from utils import simtk_matrix_to_np_array, read_from_storage, foot_on_ground
+import csv
 
 DEBUG = False
 if len(sys.argv) > 1:
@@ -16,45 +15,64 @@ absFilePath = os.path.abspath(__file__)
 fileDir = os.path.dirname(absFilePath)
 parentDir = os.path.dirname(fileDir)
 
-#initilization
-model_file, ik_data, id_data, u, a = import_from_storage(parentDir)
-
+# model file
+model_file = os.path.abspath(
+    os.path.join(parentDir, 'scale/model_scaled.osim'))
 model = opensim.Model(model_file)
 state = model.initSystem()
 coordinate_set = model.updCoordinateSet()
 pelvis = model.updBodySet().get('pelvis')
-fool_elt = ['calcn', 'toes']
-# Declare threshold to considere a foot on the ground
-thresholds = [(0.1,0.2), (0.06, 0.09)]
 
-left_foot = [model.updBodySet().get(body + '_l') for body in fool_elt]
-right_foot = [model.updBodySet().get(body + '_r') for body in fool_elt]
+# model coordinates for this specific motion
+inverse_kinematics_file = os.path.abspath(
+    os.path.join(parentDir, 'inverse_kinematics/task_InverseKinematics.mot'))
+ik_data = read_from_storage(model_file, inverse_kinematics_file)
+
+# this file contains the results from inverse dynamics ignoring the
+# ground reaction forces in the calculation.
+inverse_dynamics_file = os.path.abspath(
+    os.path.join(parentDir, 'inverse_dynamics/task_InverseDynamics.sto'))
+id_data = read_from_storage(model_file, inverse_dynamics_file)
+
+# this file contains the results from inverse dynamics ignoring the
+# ground reaction forces in the calculation.
+markers_file = os.path.abspath(
+    os.path.join(parentDir, 'inverse_kinematics/ik_model_marker_locations.sto'))
+ik_marker = read_from_storage(model_file, markers_file)
 
 assert(ik_data.shape == id_data.shape)
-assert(ik_data.shape[0] == u.shape[0])
+assert(ik_data.shape[0] == ik_marker.shape[0])
 
 # Declare moment names
 moments = ['pelvis_list_moment', 'pelvis_rotation_moment', 'pelvis_tilt_moment']
 # Declare force names
 force = ['pelvis_tx_force', 'pelvis_ty_force', 'pelvis_tz_force']
+# Declare markers names
+markers = ['Heel', 'Midfoot.Lat', 'Toe.Lat', 'Toe.Tip', 'Toe.Med', 'Midfoot.Sup']
+coordinates = ['_tx', '_ty', '_tz']
 
+# Declare threshold for markers
+thresholds = [0.075, 0.070, 0.035, 0.050, 0.055, 0.090]
 
 for i in range(ik_data.shape[0]):
 
     time = id_data.iloc[i]['time']
+
     # get residual moment and forces from inverse dynamics (expressed
     # in local frame of pelvis)
     M_p = [ id_data.iloc[i][name] for name in moments]
     F_p = [ id_data.iloc[i][name] for name in force]
 
+    # get markers position
+    markers_r = { name : [ik_marker.iloc[i]["R." + name + coord] for coord in coordinates] for name in markers}
+    markers_l = { name : [ik_marker.iloc[i]["L." + name + coord] for coord in coordinates] for name in markers}
+
     # update model pose
     for coordinate in coordinate_set:
         coordinate.setValue(state, ik_data.iloc[i][coordinate.getName()])
-        coordinate.setSpeedValue(state, u.iloc[i][coordinate.getName()])
+
 
     model.realizePosition(state)
-    model.realizeVelocity(state)
-
     # https://simtk.org/api_docs/opensim/api_docs/classOpenSim_1_1Frame.html
     # get transformation of pelvis in ground frame
     X_PG = pelvis.getTransformInGround(state)
@@ -66,33 +84,19 @@ for i in range(ik_data.shape[0]):
     F_e = R_GP.dot(F_p)
     M_e = R_GP.dot(M_p)
 
-    friction_coeff = 0.8
-    assert(F_e[1] > friction_coeff*F_e[0] and F_e[1] > friction_coeff*F_e[2])
-
     if DEBUG:
         print('-----------------------------------------------------------------------')
         print('Simulation time : {:.02f}'.format(time))
         print('Forces in ground frame : Fx = {:.03f} N, Fy = {:.03f} N, Fz = {:.03f} N'.format(F_e[0], F_e[1], F_e[2]))
         print('Moments in ground frame : Mx = {:.03f} Nm, My = {:.03f} Nm, Mz = {:.03f} Nm'.format(M_e[0], M_e[1], M_e[2]))
 
-    # Determine which foot is on ground
-    right_state = [(body.findStationLocationInGround(state, opensim.Vec3(0.,0.,0.))[1],
-                    abs(body.findStationVelocityInGround(state, opensim.Vec3(0.,0.,0.))[1]),
-                    body.getPositionInGround(state)) for body in right_foot]
-    left_state = [(body.findStationLocationInGround(state, opensim.Vec3(0.,0.,0.))[1],
-                    abs(body.findStationVelocityInGround(state, opensim.Vec3(0.,0.,0.))[1]),
-                    body.getPositionInGround(state)) for body in left_foot]
 
-    left_on_ground, right_on_ground = foot_on_ground(left_state, right_state, thresholds)
-
-    assert(left_on_ground[0][0] or left_on_ground[1][0] or right_on_ground[0][0] or right_on_ground[1][0])
+    # Need to determine which foot is in contact with the floor
+    left_on_floor = foot_on_ground(markers_l, thresholds)
+    right_on_floor = foot_on_ground(markers_r, thresholds)
 
     if DEBUG:
-        print("(Left foot) Heel on ground : {}, Toes on ground : {}".format(left_on_ground[0][0], left_on_ground[1][0]))
-        print("(Right foot) Heel on ground : {}, Toes on ground : {}".format(right_on_ground[0][0], right_on_ground[1][0]))
-
-    # Definition of the center of pressure:
-    CoP = [M_e[2] / F_e[1], 0, - M_e[0] / F_e[1]]
-    print(CoP)
-    plt.plot(CoP[0], CoP[2], 'ro')
-plt.show()
+        if left_on_floor:
+            print('RIGHT foot on floor')
+        if right_on_floor:
+            print('LEFT foot on floor')
