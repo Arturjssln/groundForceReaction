@@ -202,4 +202,9 @@ def import_from_storage(parentDir):
         os.path.join(parentDir, 'results/model_scaled_Kinematics_dudt.sto'))
     a = read_from_storage(model_file, acceleration_file)
 
-    return (model_file, ik_data, id_data, u, a)
+    # this file contains the generalized acceleration
+    experimental_file = os.path.abspath(
+        os.path.join(parentDir, 'experimental_data/task_grf.mot'))
+    exp_data = read_from_storage(model_file, experimental_file)
+
+    return (model_file, ik_data, id_data, u, a, exp_data)

@@ -1,3 +1,4 @@
+#!/usr/local/bin/python3
 import os, sys
 import csv
 import numpy as np
@@ -12,7 +13,7 @@ fileDir = os.path.dirname(absFilePath)
 parentDir = os.path.dirname(fileDir)
 
 #initilization
-model_file, ik_data, id_data, u, a = import_from_storage(parentDir)
+model_file, ik_data, id_data, u, a, _ = import_from_storage(parentDir)
 
 model = opensim.Model(model_file)
 state = model.initSystem()
