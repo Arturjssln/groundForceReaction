@@ -52,7 +52,6 @@ with open('../data/data_body.csv', 'w', newline='') as csvfile:
         writer.writerow([toes_r.findStationVelocityInGround(state, opensim.Vec3(0.,0.,0.))[i] for i in range(3)])
 
 
-# Need to determine which foot is in contact with the floor
 with open('../data/data_body.csv') as file:
     data = csv.reader(file)
     data_array = []
@@ -65,11 +64,12 @@ with open('../data/data_body.csv') as file:
 
     # Display data :
     fig1, axes1 = plt.subplots(1, 2)
-    fig1.suptitle("Heel - Toes")
+    fig1.suptitle("Position (y-axis)")
+    title = ["Heel","Toes"]
     for j in range(2):
         axes1[j].plot(np.linspace(0., 2.5, int(len(data_array)/4)), data_array[0+j::4, 1], 'r')
         axes1[j].plot(np.linspace(0., 2.5, int(len(data_array)/4)), abs(data_array[2+j::4, 1]), 'b')
-        axes1[j].set_title('Position (y)')
+        axes1[j].set_title(title[j])
         axes1[j].legend(['position', '|speed|'])
     axes1[0].axhline(y=0.1, xmin=0.0, xmax=1.0, color='r', linestyle='--')
     axes1[0].axhline(y=0.2, xmin=0.0, xmax=1.0, color='b', linestyle='--')

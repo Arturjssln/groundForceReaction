@@ -10190,12 +10190,12 @@
 			<groups />
 		</ContactGeometrySet>
 		<!--Controllers in the model.-->
-		<ControllerSet name="Controllers">
+		<ControllerSet name="controllerset">
 			<objects />
 			<groups />
 		</ControllerSet>
 		<!--Additional components in the model.-->
-		<ComponentSet name="MiscComponents">
+		<ComponentSet name="componentset">
 			<objects />
 			<groups />
 		</ComponentSet>

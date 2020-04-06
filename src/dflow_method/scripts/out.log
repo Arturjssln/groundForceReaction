@@ -1,25 +1,15 @@
 Storage: read data file =/Users/artur/Documents/GitHub/groundForceReaction/src/dflow_method/inverse_kinematics/task_InverseKinematics.mot (nr=151 nc=20)
 Updating Model file from 30000 to latest format...
 Loaded model model_scaled from file /Users/artur/Documents/GitHub/groundForceReaction/src/dflow_method/scale/model_scaled.osim
-ControllerSet 'Controllers' was renamed and is being reset to 'controllerset'.
-ComponentSet 'MiscComponents' was renamed and is being reset to 'componentset'.
 Storage: read data file =/Users/artur/Documents/GitHub/groundForceReaction/src/dflow_method/inverse_dynamics/task_InverseDynamics.sto (nr=151 nc=20)
 Storage: read data file =/Users/artur/Documents/GitHub/groundForceReaction/src/dflow_method/results/model_scaled_Kinematics_u.sto (nr=151 nc=20)
 Updating Model file from 30000 to latest format...
 Loaded model model_scaled from file /Users/artur/Documents/GitHub/groundForceReaction/src/dflow_method/scale/model_scaled.osim
-ControllerSet 'Controllers' was renamed and is being reset to 'controllerset'.
-ComponentSet 'MiscComponents' was renamed and is being reset to 'componentset'.
 Storage: read data file =/Users/artur/Documents/GitHub/groundForceReaction/src/dflow_method/results/model_scaled_Kinematics_dudt.sto (nr=151 nc=20)
 Updating Model file from 30000 to latest format...
 Loaded model model_scaled from file /Users/artur/Documents/GitHub/groundForceReaction/src/dflow_method/scale/model_scaled.osim
-ControllerSet 'Controllers' was renamed and is being reset to 'controllerset'.
-ComponentSet 'MiscComponents' was renamed and is being reset to 'componentset'.
 Storage: read data file =/Users/artur/Documents/GitHub/groundForceReaction/src/dflow_method/experimental_data/task_grf.mot (nr=1501 nc=19)
 Updating Model file from 30000 to latest format...
 Loaded model model_scaled from file /Users/artur/Documents/GitHub/groundForceReaction/src/dflow_method/scale/model_scaled.osim
-ControllerSet 'Controllers' was renamed and is being reset to 'controllerset'.
-ComponentSet 'MiscComponents' was renamed and is being reset to 'componentset'.
 Updating Model file from 30000 to latest format...
 Loaded model model_scaled from file /Users/artur/Documents/GitHub/groundForceReaction/src/dflow_method/scale/model_scaled.osim
-ControllerSet 'Controllers' was renamed and is being reset to 'controllerset'.
-ComponentSet 'MiscComponents' was renamed and is being reset to 'componentset'.

@@ -165,7 +165,7 @@ def foot_on_ground(left_state, right_state, thresholds):
     right_state: List(Tuples)
         Tuples containing (position, velocity)
         Each element of the list correspond to a body
-    thresholds:
+    thresholds: List(Tuples)
         Tuples containing (position, velocity)
         Each element of the list correspond to a body
     """
@@ -208,3 +208,22 @@ def import_from_storage(parentDir):
     exp_data = read_from_storage(model_file, experimental_file)
 
     return (model_file, ik_data, id_data, u, a, exp_data)
+
+def color_background(ax, left_idx, right_idx, times):
+    l = 0
+    for i in left_idx:
+        if i+1 < len(times):
+            ax.axvspan(times[i], times[i+1], facecolor='g', alpha=0.2, label =  "_"*l + "Left foot on groud")
+            l = 1
+    l = 0
+    for i in right_idx:
+        if i+1 < len(times):
+            ax.axvspan(times[i], times[i+1], facecolor='r', alpha=0.2, label =  "_"*l + "Right foot on ground")
+            l = 1
+
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width*0.7, box.height])
+    legend_x = 1
+    legend_y = 0.5
+    #ax.legend()
+    ax.legend(loc='center left', bbox_to_anchor=(legend_x, legend_y))
