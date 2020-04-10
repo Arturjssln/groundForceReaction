@@ -174,6 +174,8 @@ def foot_on_ground(left_state, right_state, thresholds):
     for left_body, right_body, threshold in zip(left_state, right_state, thresholds):
         out_left.append((left_body[0] < threshold[0] and left_body[1] < threshold[1], left_body[2]))
         out_right.append((right_body[0] < threshold[0] and right_body[1] < threshold[1], right_body[2]))
+        #out_left.append((left_body[0] < threshold[0], left_body[2]))
+        #out_right.append((right_body[0] < threshold[0], right_body[2]))
     return (out_left, out_right)
 
 def import_from_storage(parentDir):
@@ -227,3 +229,113 @@ def color_background(ax, left_idx, right_idx, times):
     legend_y = 0.5
     #ax.legend()
     ax.legend(loc='center left', bbox_to_anchor=(legend_x, legend_y))
+
+# Calculate distance to closest point on plane XZ
+def minDistance2d(pt1, pts2):
+    min_dist = np.inf
+    for pt2 in pts2:
+        dist = np.sqrt((pt1[0] - pt2[0])**2 + (pt1[2] - pt2[2])**2)
+        if dist < min_dist:
+            min_dist = dist
+    return min_dist
+
+def plot_results(time_grdtruth, groundtruth, times, time_left_on_ground, time_right_on_ground, forces, left_forces, right_forces, cops, right_foot_position, left_foot_position, right_foot_usage):
+    groundtruth = np.asarray(groundtruth)
+    forces = np.asarray(forces)
+    left_forces = np.asarray(left_forces)
+    right_forces = np.asarray(right_forces)
+    cops = np.asarray(cops)
+    right_foot_position = np.asarray(right_foot_position)
+    left_foot_position= np.asarray(left_foot_position)
+    right_foot_usage = np.asarray(right_foot_usage)
+
+    plt.figure()
+    plt.suptitle('Total force')
+    ax = plt.subplot(311)
+    ax.plot(time_grdtruth, groundtruth[:, 0] + groundtruth[:, 3], label = 'groundtruth')
+    ax.plot(times, forces[:, 0], label = 'prediction')
+    ax.set_title('Ground force (x-axis)')
+    color_background(ax, time_left_on_ground, time_right_on_ground, times)
+    ax = plt.subplot(312)
+    ax.plot(time_grdtruth, groundtruth[:, 1] + groundtruth[:, 4], label = 'groundtruth')
+    ax.plot(times, forces[:, 1], label = 'prediction')
+    ax.set_title('Ground force (y-axis)')
+    color_background(ax, time_left_on_ground, time_right_on_ground, times)
+    ax = plt.subplot(313)
+    ax.plot(time_grdtruth, groundtruth[:, 2] + groundtruth[:, 5], label = 'groundtruth')
+    ax.plot(times, forces[:, 2], label = 'prediction')
+    ax.set_title('Ground force (z-axis)')
+    color_background(ax, time_left_on_ground, time_right_on_ground, times)
+
+    plt.figure()
+    plt.suptitle('Left foot')
+    ax = plt.subplot(311)
+    ax.plot(time_grdtruth, groundtruth[:, 3], label = 'groundtruth')
+    ax.plot(times, left_forces[:, 0], label = 'prediction')
+    ax.set_title('Ground force (x-axis)')
+    color_background(ax, time_left_on_ground, time_right_on_ground, times)
+    ax = plt.subplot(312)
+    ax.plot(time_grdtruth, groundtruth[:, 4], label = 'groundtruth')
+    ax.plot(times, left_forces[:, 1], label = 'prediction')
+    ax.set_title('Ground force (y-axis)')
+    color_background(ax, time_left_on_ground, time_right_on_ground, times)
+    ax = plt.subplot(313)
+    ax.plot(time_grdtruth, groundtruth[:, 5], label = 'groundtruth')
+    ax.plot(times, left_forces[:, 2], label = 'prediction')
+    ax.set_title('Ground force (z-axis)')
+    color_background(ax, time_left_on_ground, time_right_on_ground, times)
+
+    plt.figure()
+    plt.suptitle('Right foot')
+    ax = plt.subplot(311)
+    ax.plot(time_grdtruth, groundtruth[:, 0], label = 'groundtruth')
+    ax.plot(times, right_forces[:, 0], label = 'prediction')
+    ax.set_title('Ground force (x-axis)')
+    color_background(ax, time_left_on_ground, time_right_on_ground, times)
+    ax = plt.subplot(312)
+    ax.plot(time_grdtruth, groundtruth[:, 1], label = 'groundtruth')
+    ax.plot(times, right_forces[:, 1], label = 'prediction')
+    ax.set_title('Ground force (y-axis)')
+    color_background(ax, time_left_on_ground, time_right_on_ground, times)
+    ax = plt.subplot(313)
+    ax.plot(time_grdtruth, groundtruth[:, 2], label = 'groundtruth')
+    ax.plot(times, right_forces[:, 2], label = 'prediction')
+    ax.set_title('Ground force (z-axis)')
+    color_background(ax, time_left_on_ground, time_right_on_ground, times)
+
+    plt.figure()
+    plt.suptitle('Position')
+    ax = plt.subplot(211)
+    ax.plot(times, cops[:, 0], label='center of pressure')
+    ax.plot(times, left_foot_position[:, 0, 0], label='left foot calcn')
+    ax.plot(times, right_foot_position[:, 0, 0], label='right foot calcn')
+    ax.plot(times, left_foot_position[:, 1, 0], label='left foot toes')
+    ax.plot(times, right_foot_position[:, 1, 0], label='right foot toes')
+    ax.set_title('x-axis')
+    color_background(ax, time_left_on_ground, time_right_on_ground, times)
+
+    ax = plt.subplot(212)
+    ax.plot(times, cops[:, 2], label='center of pressure')
+    ax.plot(times, left_foot_position[:, 0, 2], label='left foot calcn')
+    ax.plot(times, right_foot_position[:, 0, 2], label='right foot calcn')
+    ax.plot(times, left_foot_position[:, 1, 2], label='left foot toes')
+    ax.plot(times, right_foot_position[:, 1, 2], label='right foot toes')
+    ax.set_title('z-axis')
+    color_background(ax, time_left_on_ground, time_right_on_ground, times)
+
+    plt.figure()
+    ax = plt.subplot(111)
+    ax.plot(times, right_foot_usage*100, label='Right foot')
+    ax.plot(times, 100 - right_foot_usage*100, label='Left foot')
+    ax.set_title('Pourcentage of force applied on each foot')
+    ax.set_ylabel('Weighting factor (in %)')
+    color_background(ax, time_left_on_ground, time_right_on_ground, times)
+
+
+    plt.show(block = False)
+
+    try:
+        plt.pause(0.001) # Pause for interval seconds.
+        input("hit [enter] to end.")
+    finally:
+        plt.close('all')
