@@ -172,11 +172,12 @@ def foot_on_ground(left_state, right_state, thresholds):
     out_left = []
     out_right = []
     for left_body, right_body, threshold in zip(left_state, right_state, thresholds):
-        out_left.append((left_body[0] < threshold[0] and left_body[1] < threshold[1], left_body[2]))
-        out_right.append((right_body[0] < threshold[0] and right_body[1] < threshold[1], right_body[2]))
-        #out_left.append((left_body[0] < threshold[0], left_body[2]))
-        #out_right.append((right_body[0] < threshold[0], right_body[2]))
+        #out_left.append((left_body[0] < threshold[0] and left_body[1] < threshold[1], left_body[2]))
+        #out_right.append((right_body[0] < threshold[0] and right_body[1] < threshold[1], right_body[2]))
+        out_left.append((left_body[0] < threshold[0], left_body[2]))
+        out_right.append((right_body[0] < threshold[0], right_body[2]))
     return (out_left, out_right)
+
 
 def import_from_storage(parentDir):
     # model file
@@ -231,105 +232,221 @@ def color_background(ax, left_idx, right_idx, times):
     ax.legend(loc='center left', bbox_to_anchor=(legend_x, legend_y))
 
 # Calculate distance to closest point on plane XZ
-def minDistance2d(pt1, pts2):
+def minDistance2d(pt1, pts2, pelvis):
     min_dist = np.inf
     for pt2 in pts2:
-        dist = np.sqrt((pt1[0] - pt2[0])**2 + (pt1[2] - pt2[2])**2)
+        dist = np.sqrt((pt1[0] - (pt2[0] - pelvis[0]))**2 + (pt1[2] - (pt2[2] - pelvis[2]))**2)
         if dist < min_dist:
             min_dist = dist
     return min_dist
 
-def plot_results(time_grdtruth, groundtruth, times, time_left_on_ground, time_right_on_ground, forces, left_forces, right_forces, cops, right_foot_position, left_foot_position, right_foot_usage):
-    groundtruth = np.asarray(groundtruth)
-    forces = np.asarray(forces)
-    left_forces = np.asarray(left_forces)
-    right_forces = np.asarray(right_forces)
-    cops = np.asarray(cops)
-    right_foot_position = np.asarray(right_foot_position)
-    left_foot_position= np.asarray(left_foot_position)
-    right_foot_usage = np.asarray(right_foot_usage)
+# Calculate distance to closest point on axis Z
+def minDistance1d(pt1, pts2, pelvis):
+    min_dist = np.inf
+    for pt2 in pts2:
+        dist = abs(pt1[2] - (pt2[2] - pelvis[2]))
+        if dist < min_dist:
+            min_dist = dist
+    return min_dist
 
-    plt.figure()
-    plt.suptitle('Total force')
-    ax = plt.subplot(311)
-    ax.plot(time_grdtruth, groundtruth[:, 0] + groundtruth[:, 3], label = 'groundtruth')
-    ax.plot(times, forces[:, 0], label = 'prediction')
-    ax.set_title('Ground force (x-axis)')
-    color_background(ax, time_left_on_ground, time_right_on_ground, times)
-    ax = plt.subplot(312)
-    ax.plot(time_grdtruth, groundtruth[:, 1] + groundtruth[:, 4], label = 'groundtruth')
-    ax.plot(times, forces[:, 1], label = 'prediction')
-    ax.set_title('Ground force (y-axis)')
-    color_background(ax, time_left_on_ground, time_right_on_ground, times)
-    ax = plt.subplot(313)
-    ax.plot(time_grdtruth, groundtruth[:, 2] + groundtruth[:, 5], label = 'groundtruth')
-    ax.plot(times, forces[:, 2], label = 'prediction')
-    ax.set_title('Ground force (z-axis)')
-    color_background(ax, time_left_on_ground, time_right_on_ground, times)
+def smooth_function(y_ratio, v_ratio):
+    #y_smooth = 0.5 * (np.cos((y_ratio - 0.8)/((1-0.8)*np.pi))+1)
+    #v_smooth = 0.5 * (np.cos((v_ratio - 0.15)/((1-0.15)*np.pi))+1)
+    y_smooth = 0.5 * (np.tanh(-np.pi*(2*(y_ratio-0.8)-0.2)/0.2)+1)
+    v_smooth = 0.5 * (np.tanh(-np.pi*(2*(v_ratio-0.15)-0.85)/0.85)+1)
+    return (y_smooth, v_smooth)
 
-    plt.figure()
-    plt.suptitle('Left foot')
-    ax = plt.subplot(311)
-    ax.plot(time_grdtruth, groundtruth[:, 3], label = 'groundtruth')
-    ax.plot(times, left_forces[:, 0], label = 'prediction')
-    ax.set_title('Ground force (x-axis)')
-    color_background(ax, time_left_on_ground, time_right_on_ground, times)
-    ax = plt.subplot(312)
-    ax.plot(time_grdtruth, groundtruth[:, 4], label = 'groundtruth')
-    ax.plot(times, left_forces[:, 1], label = 'prediction')
-    ax.set_title('Ground force (y-axis)')
-    color_background(ax, time_left_on_ground, time_right_on_ground, times)
-    ax = plt.subplot(313)
-    ax.plot(time_grdtruth, groundtruth[:, 5], label = 'groundtruth')
-    ax.plot(times, left_forces[:, 2], label = 'prediction')
-    ax.set_title('Ground force (z-axis)')
-    color_background(ax, time_left_on_ground, time_right_on_ground, times)
+def compute_force(states, thresholds, force, forces):
+    """Return Bool that determines if feet is on the floor
 
-    plt.figure()
-    plt.suptitle('Right foot')
-    ax = plt.subplot(311)
-    ax.plot(time_grdtruth, groundtruth[:, 0], label = 'groundtruth')
-    ax.plot(times, right_forces[:, 0], label = 'prediction')
-    ax.set_title('Ground force (x-axis)')
-    color_background(ax, time_left_on_ground, time_right_on_ground, times)
-    ax = plt.subplot(312)
-    ax.plot(time_grdtruth, groundtruth[:, 1], label = 'groundtruth')
-    ax.plot(times, right_forces[:, 1], label = 'prediction')
-    ax.set_title('Ground force (y-axis)')
-    color_background(ax, time_left_on_ground, time_right_on_ground, times)
-    ax = plt.subplot(313)
-    ax.plot(time_grdtruth, groundtruth[:, 2], label = 'groundtruth')
-    ax.plot(times, right_forces[:, 2], label = 'prediction')
-    ax.set_title('Ground force (z-axis)')
-    color_background(ax, time_left_on_ground, time_right_on_ground, times)
+    Parameters
+    ----------
 
-    plt.figure()
-    plt.suptitle('Position')
-    ax = plt.subplot(211)
-    ax.plot(times, cops[:, 0], label='center of pressure')
-    ax.plot(times, left_foot_position[:, 0, 0], label='left foot calcn')
-    ax.plot(times, right_foot_position[:, 0, 0], label='right foot calcn')
-    ax.plot(times, left_foot_position[:, 1, 0], label='left foot toes')
-    ax.plot(times, right_foot_position[:, 1, 0], label='right foot toes')
-    ax.set_title('x-axis')
-    color_background(ax, time_left_on_ground, time_right_on_ground, times)
 
-    ax = plt.subplot(212)
-    ax.plot(times, cops[:, 2], label='center of pressure')
-    ax.plot(times, left_foot_position[:, 0, 2], label='left foot calcn')
-    ax.plot(times, right_foot_position[:, 0, 2], label='right foot calcn')
-    ax.plot(times, left_foot_position[:, 1, 2], label='left foot toes')
-    ax.plot(times, right_foot_position[:, 1, 2], label='right foot toes')
-    ax.set_title('z-axis')
-    color_background(ax, time_left_on_ground, time_right_on_ground, times)
+    """
+    on_floor = True
+    min_y_ratio = 1
+    min_v_ratio = 1
+    y_smooth = 0
+    v_smooth = 0
+    # find best contact point
+    for state, threshold in zip(states, thresholds):
+        y_ratio = state[0][1] / threshold[0]
+        v_ratio = state[1][1] / threshold[1]
+        y_tmp, v_tmp = smooth_function(y_ratio, v_ratio)
+        if y_ratio <= min_y_ratio:
+            y_smooth = y_tmp
+            min_y_ratio = y_ratio
+        if v_ratio <= min_v_ratio:
+            v_smooth = v_tmp
+            min_v_ratio = v_ratio
 
-    plt.figure()
-    ax = plt.subplot(111)
-    ax.plot(times, right_foot_usage*100, label='Right foot')
-    ax.plot(times, 100 - right_foot_usage*100, label='Left foot')
-    ax.set_title('Pourcentage of force applied on each foot')
-    ax.set_ylabel('Weighting factor (in %)')
-    color_background(ax, time_left_on_ground, time_right_on_ground, times)
+    if min_y_ratio < 1 and min_v_ratio < 1:
+        force_smooth = force * y_smooth * v_smooth
+    else:
+        force_smooth = [0, 0, 0]
+        on_floor = False
+    forces.append(force_smooth)
+    return on_floor
+
+def compute_force_TEST(states, thresholds, force, forces):
+    """Return Bool that determines if feet is on the floor
+
+    Parameters
+    ----------
+
+
+    """
+    on_floor = True
+    mean_y_ratio = 0
+    mean_v_ratio = 0
+    mean_y_smooth = 0
+    mean_v_smooth = 0
+    nb_element = len(states)
+    # find best contact point
+    for state, threshold in zip(states, thresholds):
+        y_ratio = state[0][1] / threshold[0]
+        v_ratio = state[1][1] / threshold[1]
+        y_smooth, v_smooth = smooth_function(y_ratio, v_ratio)
+        #if y_ratio <= 1:
+        mean_y_ratio += y_ratio / nb_element
+        mean_y_smooth += y_smooth / nb_element
+        #if v_ratio <= 1:
+        mean_v_ratio += v_ratio / nb_element
+        mean_v_smooth += v_smooth / nb_element
+
+    if mean_y_ratio < 1 and mean_v_ratio < 1:
+        force_smooth = force * mean_y_smooth * mean_v_smooth
+    else:
+        force_smooth = [0, 0, 0]
+        on_floor = False
+    forces.append(force_smooth)
+    return on_floor
+
+def plot_results(time_grdtruth = None, groundtruth = None, times = None, \
+                    time_left_on_ground = None, time_right_on_ground = None, \
+                    forces = None, left_forces = None, right_forces = None, cops = None,\
+                    right_foot_position = None, left_foot_position = None, right_foot_usage = None):
+    if times is not None and \
+        time_left_on_ground is not None and \
+        time_right_on_ground is not None:
+        display_background = True
+    else:
+        display_background = False
+
+
+    if groundtruth is not None and \
+        time_grdtruth is not None and \
+        forces is not None and \
+        left_forces is not None and \
+        right_forces is not None:
+        groundtruth = np.asarray(groundtruth)
+        forces = np.asarray(forces)
+        left_forces = np.asarray(left_forces)
+        right_forces = np.asarray(right_forces)
+        plt.figure()
+        plt.suptitle('Total force')
+        ax = plt.subplot(311)
+        ax.plot(time_grdtruth, groundtruth[:, 0] + groundtruth[:, 3], label = 'groundtruth')
+        ax.plot(times, forces[:, 0], label = 'prediction')
+        ax.set_title('Ground force (x-axis)')
+        if display_background:
+            color_background(ax, time_left_on_ground, time_right_on_ground, times)
+        ax = plt.subplot(312)
+        ax.plot(time_grdtruth, groundtruth[:, 1] + groundtruth[:, 4], label = 'groundtruth')
+        ax.plot(times, forces[:, 1], label = 'prediction')
+        ax.set_title('Ground force (y-axis)')
+        if display_background:
+            color_background(ax, time_left_on_ground, time_right_on_ground, times)
+        ax = plt.subplot(313)
+        ax.plot(time_grdtruth, groundtruth[:, 2] + groundtruth[:, 5], label = 'groundtruth')
+        ax.plot(times, forces[:, 2], label = 'prediction')
+        ax.set_title('Ground force (z-axis)')
+        if display_background:
+            color_background(ax, time_left_on_ground, time_right_on_ground, times)
+
+        plt.figure()
+        plt.suptitle('Left foot')
+        ax = plt.subplot(311)
+        ax.plot(time_grdtruth, groundtruth[:, 3], label = 'groundtruth')
+        ax.plot(times, left_forces[:, 0], label = 'prediction')
+        ax.set_title('Ground force (x-axis)')
+        if display_background:
+            color_background(ax, time_left_on_ground, time_right_on_ground, times)
+        ax = plt.subplot(312)
+        ax.plot(time_grdtruth, groundtruth[:, 4], label = 'groundtruth')
+        ax.plot(times, left_forces[:, 1], label = 'prediction')
+        ax.set_title('Ground force (y-axis)')
+        if display_background:
+            color_background(ax, time_left_on_ground, time_right_on_ground, times)
+        ax = plt.subplot(313)
+        ax.plot(time_grdtruth, groundtruth[:, 5], label = 'groundtruth')
+        ax.plot(times, left_forces[:, 2], label = 'prediction')
+        ax.set_title('Ground force (z-axis)')
+        if display_background:
+            color_background(ax, time_left_on_ground, time_right_on_ground, times)
+
+        plt.figure()
+        plt.suptitle('Right foot')
+        ax = plt.subplot(311)
+        ax.plot(time_grdtruth, groundtruth[:, 0], label = 'groundtruth')
+        ax.plot(times, right_forces[:, 0], label = 'prediction')
+        ax.set_title('Ground force (x-axis)')
+        if display_background:
+            color_background(ax, time_left_on_ground, time_right_on_ground, times)
+        ax = plt.subplot(312)
+        ax.plot(time_grdtruth, groundtruth[:, 1], label = 'groundtruth')
+        ax.plot(times, right_forces[:, 1], label = 'prediction')
+        ax.set_title('Ground force (y-axis)')
+        if display_background:
+            color_background(ax, time_left_on_ground, time_right_on_ground, times)
+        ax = plt.subplot(313)
+        ax.plot(time_grdtruth, groundtruth[:, 2], label = 'groundtruth')
+        ax.plot(times, right_forces[:, 2], label = 'prediction')
+        ax.set_title('Ground force (z-axis)')
+        if display_background:
+            color_background(ax, time_left_on_ground, time_right_on_ground, times)
+
+    if cops is not None and \
+        right_foot_position is not None and \
+        left_foot_position is not None:
+
+        cops = np.asarray(cops)
+        right_foot_position = np.asarray(right_foot_position)
+        left_foot_position = np.asarray(left_foot_position)
+        plt.figure()
+        plt.suptitle('Position')
+        ax = plt.subplot(211)
+        ax.plot(times, cops[:, 0], label='center of pressure')
+        ax.plot(times, left_foot_position[:, 0, 0], label='left foot calcn')
+        ax.plot(times, right_foot_position[:, 0, 0], label='right foot calcn')
+        ax.plot(times, left_foot_position[:, 1, 0], label='left foot toes')
+        ax.plot(times, right_foot_position[:, 1, 0], label='right foot toes')
+        ax.set_title('x-axis')
+        if display_background:
+            color_background(ax, time_left_on_ground, time_right_on_ground, times)
+
+        ax = plt.subplot(212)
+        ax.plot(times, cops[:, 2], label='center of pressure')
+        ax.plot(times, left_foot_position[:, 0, 2], label='left foot calcn')
+        ax.plot(times, right_foot_position[:, 0, 2], label='right foot calcn')
+        ax.plot(times, left_foot_position[:, 1, 2], label='left foot toes')
+        ax.plot(times, right_foot_position[:, 1, 2], label='right foot toes')
+        ax.set_title('z-axis')
+        if display_background:
+            color_background(ax, time_left_on_ground, time_right_on_ground, times)
+
+
+    if right_foot_usage is not None:
+        right_foot_usage = np.asarray(right_foot_usage)
+        plt.figure()
+        ax = plt.subplot(111)
+        ax.plot(times, right_foot_usage*100, label='Right foot')
+        ax.plot(times, 100 - right_foot_usage*100, label='Left foot')
+        ax.set_title('Pourcentage of force applied on each foot')
+        ax.set_ylabel('Weighting factor (in %)')
+        if display_background:
+            color_background(ax, time_left_on_ground, time_right_on_ground, times)
 
 
     plt.show(block = False)

@@ -28,14 +28,27 @@ state = model.initSystem()
 coordinate_set = model.updCoordinateSet()
 pelvis = model.updBodySet().get('pelvis')
 calcn_r = model.updBodySet().get('calcn_r')
-point_r = [opensim.Vec3(0.,-0.04,0.), opensim.Vec3(0.25,-0.028,-0.015)]
 calcn_l = model.updBodySet().get('calcn_l')
-point_l = [opensim.Vec3(0.,-0.04,0.), opensim.Vec3(0.25,-0.028,0.015)]
-# Declare threshold to considere a foot on the ground
-thresholds = [(0.02,0.25), (0.02, 0.2)]
-
-#left_foot = [model.updBodySet().get(body + '_l') for body in fool_elt]
-#right_foot = [model.updBodySet().get(body + '_r') for body in fool_elt]
+toes_r = model.updBodySet().get('toes_r')
+toes_l = model.updBodySet().get('toes_l')
+bodies_left = [toes_l, calcn_l]
+bodies_right = [toes_r, calcn_r]
+# Declare thresholds
+#thresholds = [(0.06, 0.2), (0.055, 0.1)]
+thresholds = [(0.06, 0.2), (0.055, 0.25)]
+# case = 0
+# if case == 0:
+#     bodies_left = [toes_l, calcn_l]
+#     bodies_right = [toes_r, calcn_r]
+#     thresholds = [(0.06, 0.2), (0.055, 0.25)]
+# elif case == 1:
+#     bodies_left = [toes_l]
+#     bodies_right = [toes_r]
+#     thresholds = [(0.06, 0.2)]
+# else:
+#     bodies_left = [calcn_l]
+#     bodies_right = [calcn_r]
+#     thresholds = [(0.1, 0.25)]
 
 assert(ik_data.shape == id_data.shape)
 assert(ik_data.shape[0] == u.shape[0])
@@ -88,62 +101,19 @@ for i in range(ik_data.shape[0]):
     assert(F_e[1] > friction_coeff*F_e[0] and F_e[1] > friction_coeff*F_e[2])
 
     # Determine which foot is on ground
-    right_state = np.asarray([(calcn_r.findStationLocationInGround(state, pt)[1],
-                    abs(calcn_r.findStationVelocityInGround(state, pt)[1]),
-                    [calcn_r.findStationLocationInGround(state, pt)[i] for i in range(3)]) for pt in point_r])
-    left_state = np.asarray([(calcn_l.findStationLocationInGround(state, pt)[1],
-                    abs(calcn_l.findStationVelocityInGround(state, pt)[1]),
-                    [calcn_l.findStationLocationInGround(state, pt)[i] for i in range(3)]) for pt in point_l])
-
-    pelvis_pos = np.asarray([pelvis.getPositionInGround(state)[i] for i in range(3)])
-
-    left_foot_position.append([elt[2] - pelvis_pos for elt in left_state])
-    right_foot_position.append([elt[2] - pelvis_pos for elt in right_state])
-    left_on_ground, right_on_ground = foot_on_ground(left_state, right_state, thresholds)
-
-    left_ground = any([on_ground for on_ground, _ in left_on_ground])
-    right_ground = any([on_ground for on_ground, _ in right_on_ground])
-
-    if left_ground:
-        time_left_on_ground.append(i)
-    if right_ground:
-        time_right_on_ground.append(i)
-
-
-    assert(left_ground or right_ground)
-
-    # Definition of the center of pressure:
-    CoP = [M_e[2] / F_e[1], 0, - M_e[0] / F_e[1]]
-    cops.append(CoP)
-    # Calculating weighting factors
-    d_l = minDistance1d(CoP, left_state[:, 2], pelvis_pos)
-    d_r = minDistance1d(CoP, right_state[:, 2], pelvis_pos)
-    w_r = d_l / (d_l + d_r)
-    w_l = d_r / (d_l + d_r)
+    right_state = [ np.asarray([ np.asarray([body_part.findStationLocationInGround(state, opensim.Vec3(0.,0.,0.))[i] for i in range(3)]),
+                    np.asarray([abs(body_part.findStationVelocityInGround(state, opensim.Vec3(0.,0.,0.))[i]) for i in range(3)])]) for body_part in bodies_right]
+    left_state = [  np.asarray([  np.asarray([body_part.findStationLocationInGround(state, opensim.Vec3(0.,0.,0.))[i] for i in range(3)]),
+                    np.asarray([abs(body_part.findStationVelocityInGround(state, opensim.Vec3(0.,0.,0.))[i]) for i in range(3)])]) for body_part in bodies_left]
 
     forces.append(F_e)
-    if left_ground and right_ground:
-        left_forces.append(F_e * w_l)
-        right_forces.append(F_e * w_r)
-    elif left_ground and not right_ground :
-        left_forces.append(F_e)
-        right_forces.append([0, 0, 0])
-    elif not left_ground and right_ground :
-        right_forces.append(F_e)
-        left_forces.append([0, 0, 0])
-    else:
-        right_forces.append([0, 0, 0])
-        left_forces.append([0, 0, 0])
+    left_on_ground = compute_force(left_state, thresholds, F_e, left_forces)
+    right_on_ground = compute_force(right_state, thresholds, F_e, right_forces)
 
-    if left_ground and right_ground:
-        right_foot_usage.append(w_r)
-    elif left_ground and not right_ground :
-        right_foot_usage.append(0)
-    elif not left_ground and right_ground :
-        right_foot_usage.append(1)
-    else:
-        right_foot_usage.append(0.5)
-
+    if left_on_ground:
+        time_left_on_ground.append(i)
+    if right_on_ground:
+        time_right_on_ground.append(i)
 
 # Declare groundtruth force names
 grdtruth_force = ['ground_force_vx', 'ground_force_vy', 'ground_force_vz', '1_ground_force_vx', '1_ground_force_vy', '1_ground_force_vz']
@@ -155,4 +125,4 @@ for i in range(exp_data.shape[0]):
     grdtruth = [ exp_data.iloc[i][name] for name in grdtruth_force]
     groundtruth.append(grdtruth)
 
-plot_results(time_grdtruth, groundtruth, times, time_left_on_ground, time_right_on_ground, forces, left_forces, right_forces, cops, right_foot_position, left_foot_position, right_foot_usage)
+plot_results(time_grdtruth, groundtruth, times, time_left_on_ground, time_right_on_ground, forces, left_forces, right_forces)
