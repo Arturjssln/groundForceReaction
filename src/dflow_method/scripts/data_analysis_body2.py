@@ -20,9 +20,22 @@ state = model.initSystem()
 coordinate_set = model.updCoordinateSet()
 pelvis = model.updBodySet().get('pelvis')
 calcn_r = model.updBodySet().get('calcn_r')
-toes_r = model.updBodySet().get('toes_r')
 calcn_l = model.updBodySet().get('calcn_l')
+toes_r = model.updBodySet().get('toes_r')
 toes_l = model.updBodySet().get('toes_l')
+bodies_left = [calcn_l] * 9 + [toes_l]
+bodies_right = [calcn_r] * 9 + [toes_r]
+
+points_r = [opensim.Vec3(0, -0.005, 0), opensim.Vec3(0.1, -0.005, 0), 
+            opensim.Vec3(0.2, -0.005, 0), opensim.Vec3(0.1, -0.005, 0.05),
+            opensim.Vec3(0.2, -0.005, 0.05), opensim.Vec3(0.1, -0.005, -0.05),
+            opensim.Vec3(0.05, -0.005, -0.025), opensim.Vec3(0.05, -0.005, 0.025),
+            opensim.Vec3(0.05, -0.005, -0.025), opensim.Vec3(0.057, 0.0, -0.015)]
+points_l = [opensim.Vec3(0, -0.005, 0), opensim.Vec3(0.1, -0.005, 0), 
+            opensim.Vec3(0.2, -0.005, 0), opensim.Vec3(0.1, -0.005, 0.05),
+            opensim.Vec3(0.2, -0.005, 0.05), opensim.Vec3(0.1, -0.005, -0.05),
+            opensim.Vec3(0.05, -0.005, -0.025), opensim.Vec3(0.05, -0.005, 0.025),
+            opensim.Vec3(0.05, -0.005, -0.025), opensim.Vec3(0.057, 0.0, 0.015)]
 
 assert(ik_data.shape == id_data.shape)
 assert(ik_data.shape[0] == u.shape[0])
@@ -32,7 +45,8 @@ moments = ['pelvis_list_moment', 'pelvis_rotation_moment', 'pelvis_tilt_moment']
 # Declare force names
 force = ['pelvis_tx_force', 'pelvis_ty_force', 'pelvis_tz_force']
 
-with open('../data/data_body.csv', 'w', newline='') as csvfile:
+with open('../data/data_body.csv', 'w') as csvfile:
+    csvfile.truncate()
     writer = csv.writer(csvfile)
     for i in range(ik_data.shape[0]):
 
@@ -45,10 +59,9 @@ with open('../data/data_body.csv', 'w', newline='') as csvfile:
 
         model.realizePosition(state)
         model.realizeVelocity(state)
-        writer.writerow([calcn_l.findStationLocationInGround(state, opensim.Vec3(0.,0.,0.))[i] for i in range(3)])
-        writer.writerow([toes_l.findStationLocationInGround(state, opensim.Vec3(0.,0.,0.))[i] for i in range(3)])
-        writer.writerow([calcn_l.findStationVelocityInGround(state, opensim.Vec3(0.,0.,0.))[i] for i in range(3)])
-        writer.writerow([toes_l.findStationVelocityInGround(state, opensim.Vec3(0.,0.,0.))[i] for i in range(3)])
+        for body_part, position in zip(bodies_right, points_r):
+            writer.writerow([body_part.findStationLocationInGround(state, position)[i] for i in range(3)])
+            writer.writerow([body_part.findStationVelocityInGround(state, position)[i] for i in range(3)])
 
 
 with open('../data/data_body.csv') as file:
@@ -63,15 +76,13 @@ with open('../data/data_body.csv') as file:
 
     # Display data :
     fig1, axes1 = plt.subplots(1, 2)
-    fig1.suptitle("Position (y-axis)")
-    title = ["Heel","Toes"]
-    for j in range(2):
-        axes1[j].plot(np.linspace(0., 2.5, int(len(data_array)/4)), data_array[(0+j)::4, 1], 'r')
-        axes1[j].plot(np.linspace(0., 2.5, int(len(data_array)/4)), abs(data_array[(2+j)::4, 1]), 'b')
-        axes1[j].set_title(title[j])
-        axes1[j].legend(['position', '|speed|'])
-    axes1[0].axhline(y=0.1, xmin=0.0, xmax=1.0, color='r', linestyle='--')
-    axes1[0].axhline(y=0.25, xmin=0.0, xmax=1.0, color='b', linestyle='--')
-    axes1[1].axhline(y=0.06, xmin=0.0, xmax=1.0, color='r', linestyle='--')
-    axes1[1].axhline(y=0.2, xmin=0.0, xmax=1.0, color='b', linestyle='--')
+    axes1[0].set_title("Position")
+    axes1[1].set_title("Speed")
+    for j in range(len(bodies_left)):
+        axes1[0].plot(np.linspace(0., 2.5, int(len(data_array)/(2*len(bodies_left)))), data_array[(0+2*j)::(2*len(bodies_left)), 1], label="Point"+str(j+1))
+        axes1[1].plot(np.linspace(0., 2.5, int(len(data_array)/(2*len(bodies_left)))), abs(data_array[(1+2*j)::(2*len(bodies_left)), 1]), label="Point"+str(j+1))
+    axes1[0].axhline(y=0.05, xmin=0.0, xmax=1.0, color='b', linestyle='--')
+    axes1[1].axhline(y=0.1, xmin=0.0, xmax=1.0, color='b', linestyle='--')
+    axes1[0].legend()
+    axes1[1].legend()
     plt.show()

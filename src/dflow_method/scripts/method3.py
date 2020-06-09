@@ -31,21 +31,23 @@ calcn_r = model.updBodySet().get('calcn_r')
 calcn_l = model.updBodySet().get('calcn_l')
 toes_r = model.updBodySet().get('toes_r')
 toes_l = model.updBodySet().get('toes_l')
-bodies_left = [calcn_l] * 9 + [toes_l]
-bodies_right = [calcn_r] * 9 + [toes_r]
+bodies_left = [calcn_l] * 6 + [toes_l]
+bodies_right = [calcn_r] * 6 + [toes_r]
 
-points_r = [opensim.Vec3(0, -0.005, 0), opensim.Vec3(0.1, -0.005, 0), 
-            opensim.Vec3(0.2, -0.005, 0), opensim.Vec3(0.1, -0.005, 0.05),
-            opensim.Vec3(0.2, -0.005, 0.05), opensim.Vec3(0.1, -0.005, -0.05),
-            opensim.Vec3(0.05, -0.005, -0.025), opensim.Vec3(0.05, -0.005, 0.025),
-            opensim.Vec3(0.05, -0.005, -0.025), opensim.Vec3(0.057, 0.0, -0.015)]
-points_l = [opensim.Vec3(0, -0.005, 0), opensim.Vec3(0.1, -0.005, 0), 
-            opensim.Vec3(0.2, -0.005, 0), opensim.Vec3(0.1, -0.005, 0.05),
-            opensim.Vec3(0.2, -0.005, 0.05), opensim.Vec3(0.1, -0.005, -0.05),
-            opensim.Vec3(0.05, -0.005, -0.025), opensim.Vec3(0.05, -0.005, 0.025),
-            opensim.Vec3(0.05, -0.005, -0.025), opensim.Vec3(0.057, 0.0, 0.015)]
-# Declare thresholds
-thresholds = (0.05, 0.1)
+points_r = [opensim.Vec3(0, -0.005, 0),  # Heel
+            opensim.Vec3(0.05, -0.005, -0.025), # Heel
+            opensim.Vec3(0.05, -0.005, -0.025), # Heel
+            opensim.Vec3(0.2, -0.005, -0.05), # Toes
+            opensim.Vec3(0.2, -0.005, 0), # Toes
+            opensim.Vec3(0.2, -0.005, 0.05), # Toes
+            opensim.Vec3(0.057, 0.0, -0.015)] # Toes
+points_l = [opensim.Vec3(0, -0.005, 0),  # Heel
+            opensim.Vec3(0.05, -0.005, -0.025), # Heel
+            opensim.Vec3(0.05, -0.005, -0.025), # Heel
+            opensim.Vec3(0.2, -0.005, -0.05), # Toes
+            opensim.Vec3(0.2, -0.005, 0), # Toes
+            opensim.Vec3(0.2, -0.005, 0.05), # Toes
+            opensim.Vec3(0.057, 0.0, 0.015)] # Toes
 
 assert(ik_data.shape == id_data.shape)
 assert(ik_data.shape[0] == u.shape[0])
@@ -60,6 +62,11 @@ left_forces = []
 right_forces = []
 times = []
 cops = []
+heel_r = []
+toes_r = []
+heel_l = []
+toes_l = []
+pelvis_s = []
 time_left_on_ground = []
 time_right_on_ground = []
 left_foot_position = []
@@ -99,22 +106,18 @@ for i in range(ik_data.shape[0]):
 
     # Determine which foot is on ground
     right_state = [ np.asarray([ np.asarray([body_part.findStationLocationInGround(state, position)[i] for i in range(3)]),
-                    np.asarray([abs(body_part.findStationVelocityInGround(state, position)[i]) for i in range(3)])]) for body_part, position in zip(bodies_right, points_r)]
-    left_state = [  np.asarray([  np.asarray([body_part.findStationLocationInGround(state, position)[i] for i in range(3)]),
-                    np.asarray([abs(body_part.findStationVelocityInGround(state, position)[i]) for i in range(3)])]) for body_part, position in zip(bodies_left, points_l)]
-
+                    np.asarray([body_part.findStationVelocityInGround(state, position)[i] for i in range(3)])]) for body_part, position in zip(bodies_right, points_r)]
+    left_state = [  np.asarray([np.asarray([body_part.findStationLocationInGround(state, position)[i] for i in range(3)]),
+                    np.asarray([body_part.findStationVelocityInGround(state, position)[i] for i in range(3)])]) for body_part, position in zip(bodies_left, points_l)]
+    pelvis_speed = np.asarray([pelvis.findStationVelocityInGround(state, opensim.Vec3(0, 0, 0))[i] for i in range(3)])
     forces.append(F_e)
-    left_on_ground = compute_force_2(left_state, thresholds, F_e, left_forces)
-    right_on_ground = compute_force_2(right_state, thresholds, F_e, right_forces)
-
+    left_on_ground = compute_force_3(left_state, pelvis_speed, left_forces, heel_l, toes_l)
+    right_on_ground = compute_force_3(right_state, pelvis_speed, right_forces, heel_r, toes_r)
+    pelvis_s.append(np.sqrt(np.sum(pelvis_speed**2)))
     if left_on_ground:
         time_left_on_ground.append(i)
     if right_on_ground:
         time_right_on_ground.append(i)
-
-# Apply moving average on forces  
-left_forces = moving_average(left_forces, width=10)
-right_forces = moving_average(right_forces, width=10)
 
 # Declare groundtruth force names
 grdtruth_force = ['ground_force_vx', 'ground_force_vy', 'ground_force_vz', '1_ground_force_vx', '1_ground_force_vy', '1_ground_force_vz']
@@ -130,4 +133,20 @@ for i in range(exp_data.shape[0]):
     groundtruth.append(grdtruth)
     groundtruth_m.append(grdtruth_m)
 
-plot_results(time_grdtruth, groundtruth, groundtruth_m, times, time_left_on_ground, time_right_on_ground, forces, left_forces, right_forces)
+#plot_results(time_grdtruth, groundtruth, groundtruth_m, times, time_left_on_ground, time_right_on_ground, forces, left_forces, right_forces)
+
+plt.figure()
+ax = plt.subplot(211)
+ax.set_title("Left leg average speed")
+ax.plot(times, heel_l, label = 'heel')
+ax.plot(times, toes_l, label = 'toes')
+ax.plot(times, pelvis_s, label = 'pelvis')
+plt.legend()
+ax = plt.subplot(212)
+ax.set_title("Right leg average speed")
+ax.plot(times, heel_r, label = 'heel')
+ax.plot(times, toes_r, label = 'toes')
+ax.plot(times, pelvis_s, label='pelvis')
+plt.legend()
+plt.show()
+

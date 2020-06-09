@@ -289,44 +289,63 @@ def compute_force(states, thresholds, force, forces):
     forces.append(force_smooth)
     return on_floor
 
-def compute_force_TEST(states, thresholds, force, forces):
-    """Return Bool that determines if feet is on the floor
-
+def compute_force_2(states, thresholds, force, forces):
+    """
+    Return Bool that determines if feet is on the floor
     Parameters
     ----------
-
-
     """
     on_floor = True
-    mean_y_ratio = 0
-    mean_v_ratio = 0
-    mean_y_smooth = 0
-    mean_v_smooth = 0
-    nb_element = len(states)
+    min_y_ratio = 1
+    min_v_ratio = 1
+    y_smooth = 0
+    v_smooth = 0
     # find best contact point
-    for state, threshold in zip(states, thresholds):
-        y_ratio = state[0][1] / threshold[0]
-        v_ratio = state[1][1] / threshold[1]
-        y_smooth, v_smooth = smooth_function(y_ratio, v_ratio)
-        #if y_ratio <= 1:
-        mean_y_ratio += y_ratio / nb_element
-        mean_y_smooth += y_smooth / nb_element
-        #if v_ratio <= 1:
-        mean_v_ratio += v_ratio / nb_element
-        mean_v_smooth += v_smooth / nb_element
+    for state in states:
+        y_ratio = state[0][1] / thresholds[0]
+        v_ratio = state[1][1] / thresholds[1]
+        y_tmp, v_tmp = smooth_function(y_ratio, v_ratio)
+        if y_ratio <= min_y_ratio:
+            y_smooth = y_tmp
+            min_y_ratio = y_ratio
+        if v_ratio <= min_v_ratio:
+            v_smooth = v_tmp
+            min_v_ratio = v_ratio
 
-    if mean_y_ratio < 1 and mean_v_ratio < 1:
-        force_smooth = force * mean_y_smooth * mean_v_smooth
+    if min_y_ratio < 1 and min_v_ratio < 1:
+        force_smooth = force * y_smooth * v_smooth
     else:
         force_smooth = [0, 0, 0]
         on_floor = False
     forces.append(force_smooth)
     return on_floor
+    
+def compute_force_3(states, pelvis_speed, forces, heel, toes):
+    """
+    Return Bool that determines if feet is on the floor
+    Parameters
+    ----------
+    """
+    forces.append([0,0,0])
+    on_floor = False
 
-def plot_results(time_grdtruth = None, groundtruth = None, times = None, \
+    states = np.array(states)
+    pelvis_norm = np.sqrt(np.sum(pelvis_speed**2))
+    thres1 = 0.6 * pelvis_norm
+    thres2 = 1.9 * pelvis_norm
+    average_heel = np.average(np.sqrt(np.sum(states[:3, 1]**2, axis=1)))
+    average_toes = np.average(np.sqrt(np.sum(states[3:, 1]**2, axis=1)))
+    print("pelvis speed (x, y, z):\n", pelvis_speed)
+    print("point on foot speed (x, y, z):\n", states[:, 1])
+    heel.append(average_heel)
+    toes.append(average_toes)
+    return on_floor
+
+def plot_results(time_grdtruth = None, groundtruth = None, groundtruth_moments = None, times = None, \
                     time_left_on_ground = None, time_right_on_ground = None, \
                     forces = None, left_forces = None, right_forces = None, cops = None,\
-                    right_foot_position = None, left_foot_position = None, right_foot_usage = None):
+                    right_foot_position = None, left_foot_position = None, right_foot_usage = None, \
+                    moments = None, left_moments = None, right_moments = None):
     if times is not None and \
         time_left_on_ground is not None and \
         time_right_on_ground is not None:
@@ -407,6 +426,78 @@ def plot_results(time_grdtruth = None, groundtruth = None, times = None, \
         if display_background:
             color_background(ax, time_left_on_ground, time_right_on_ground, times)
 
+    if groundtruth_moments is not None and \
+        time_grdtruth is not None and \
+        moments is not None and \
+        left_moments is not None and \
+        right_moments is not None:
+        groundtruth_moments = np.asarray(groundtruth_moments)
+        moments = np.asarray(moments)
+        left_moments = np.asarray(left_moments)
+        right_moments = np.asarray(right_moments)
+        plt.figure()
+        plt.suptitle('Total moments')
+        ax = plt.subplot(311)
+        ax.plot(time_grdtruth, groundtruth_moments[:, 0] + groundtruth_moments[:, 3], label = 'groundtruth')
+        ax.plot(times, moments[:, 0], label = 'prediction')
+        ax.set_title('Ground moments (x-axis)')
+        if display_background:
+            color_background(ax, time_left_on_ground, time_right_on_ground, times)
+        ax = plt.subplot(312)
+        ax.plot(time_grdtruth, groundtruth_moments[:, 1] + groundtruth_moments[:, 4], label = 'groundtruth')
+        ax.plot(times, moments[:, 1], label = 'prediction')
+        ax.set_title('Ground moments (y-axis)')
+        if display_background:
+            color_background(ax, time_left_on_ground, time_right_on_ground, times)
+        ax = plt.subplot(313)
+        ax.plot(time_grdtruth, groundtruth_moments[:, 2] + groundtruth_moments[:, 5], label = 'groundtruth')
+        ax.plot(times, moments[:, 2], label = 'prediction')
+        ax.set_title('Ground moments (z-axis)')
+        if display_background:
+            color_background(ax, time_left_on_ground, time_right_on_ground, times)
+
+        plt.figure()
+        plt.suptitle('Left foot')
+        ax = plt.subplot(311)
+        ax.plot(time_grdtruth, groundtruth_moments[:, 3], label = 'groundtruth')
+        ax.plot(times, left_moments[:, 0], label = 'prediction')
+        ax.set_title('Ground moments (x-axis)')
+        if display_background:
+            color_background(ax, time_left_on_ground, time_right_on_ground, times)
+        ax = plt.subplot(312)
+        ax.plot(time_grdtruth, groundtruth_moments[:, 4], label = 'groundtruth')
+        ax.plot(times, left_moments[:, 1], label = 'prediction')
+        ax.set_title('Ground moments (y-axis)')
+        if display_background:
+            color_background(ax, time_left_on_ground, time_right_on_ground, times)
+        ax = plt.subplot(313)
+        ax.plot(time_grdtruth, groundtruth_moments[:, 5], label = 'groundtruth')
+        ax.plot(times, left_moments[:, 2], label = 'prediction')
+        ax.set_title('Ground moments (z-axis)')
+        if display_background:
+            color_background(ax, time_left_on_ground, time_right_on_ground, times)
+
+        plt.figure()
+        plt.suptitle('Right foot')
+        ax = plt.subplot(311)
+        ax.plot(time_grdtruth, groundtruth_moments[:, 0], label = 'groundtruth')
+        ax.plot(times, right_moments[:, 0], label = 'prediction')
+        ax.set_title('Ground moments (x-axis)')
+        if display_background:
+            color_background(ax, time_left_on_ground, time_right_on_ground, times)
+        ax = plt.subplot(312)
+        ax.plot(time_grdtruth, groundtruth_moments[:, 1], label = 'groundtruth')
+        ax.plot(times, right_moments[:, 1], label = 'prediction')
+        ax.set_title('Ground moments (y-axis)')
+        if display_background:
+            color_background(ax, time_left_on_ground, time_right_on_ground, times)
+        ax = plt.subplot(313)
+        ax.plot(time_grdtruth, groundtruth_moments[:, 2], label = 'groundtruth')
+        ax.plot(times, right_moments[:, 2], label = 'prediction')
+        ax.set_title('Ground moments (z-axis)')
+        if display_background:
+            color_background(ax, time_left_on_ground, time_right_on_ground, times)
+
     if cops is not None and \
         right_foot_position is not None and \
         left_foot_position is not None:
@@ -456,3 +547,10 @@ def plot_results(time_grdtruth = None, groundtruth = None, times = None, \
         input("hit [enter] to end.")
     finally:
         plt.close('all')
+
+
+def moving_average(forces, width=5):
+    out = np.copy(np.array(forces))
+    for i in range(3):
+        out[:,i] = np.convolve(out[:,i], np.ones(width)/width, mode='same')
+    return out

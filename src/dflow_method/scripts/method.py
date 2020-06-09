@@ -41,13 +41,16 @@ assert(ik_data.shape == id_data.shape)
 assert(ik_data.shape[0] == u.shape[0])
 
 # Declare moment names
-moments = ['pelvis_list_moment', 'pelvis_rotation_moment', 'pelvis_tilt_moment']
+moment = ['pelvis_list_moment', 'pelvis_rotation_moment', 'pelvis_tilt_moment']
 # Declare force names
 force = ['pelvis_tx_force', 'pelvis_ty_force', 'pelvis_tz_force']
 
 forces = []
 left_forces = []
 right_forces = []
+moments = []
+left_moments = []
+right_moments = []
 times = []
 cops = []
 time_left_on_ground = []
@@ -62,7 +65,7 @@ for i in range(ik_data.shape[0]):
 
     # get residual moment and forces from inverse dynamics (expressed
     # in local frame of pelvis)
-    M_p = [ id_data.iloc[i][name] for name in moments]
+    M_p = [ id_data.iloc[i][name] for name in moment]
     F_p = [ id_data.iloc[i][name] for name in force]
 
     # update model pose
@@ -135,6 +138,20 @@ for i in range(ik_data.shape[0]):
         right_forces.append([0, 0, 0])
         left_forces.append([0, 0, 0])
 
+    moments.append(M_e)
+    if left_ground and right_ground:
+        left_moments.append(F_e * w_l)
+        right_moments.append(F_e * w_r)
+    elif left_ground and not right_ground:
+        left_moments.append(F_e)
+        right_moments.append([0, 0, 0])
+    elif not left_ground and right_ground:
+        left_moments.append([0, 0, 0])
+        right_moments.append(F_e)
+    else:
+        left_moments.append([0, 0, 0])
+        right_moments.append([0, 0, 0])
+
     if left_ground and right_ground:
         right_foot_usage.append(w_r)
     elif left_ground and not right_ground :
@@ -147,12 +164,19 @@ for i in range(ik_data.shape[0]):
 
 # Declare groundtruth force names
 grdtruth_force = ['ground_force_vx', 'ground_force_vy', 'ground_force_vz', '1_ground_force_vx', '1_ground_force_vy', '1_ground_force_vz']
+grdtruth_moments = ['ground_torque_x', 'ground_torque_y', 'ground_torque_z', '1_ground_torque_x', '1_ground_torque_y', '1_ground_torque_z']
 time_grdtruth = []
 groundtruth = []
+groundtruth_m = []
 for i in range(exp_data.shape[0]):
     time = exp_data.iloc[i]['time']
     time_grdtruth.append(time)
-    grdtruth = [ exp_data.iloc[i][name] for name in grdtruth_force]
+    grdtruth = [exp_data.iloc[i][name] for name in grdtruth_force]
+    grdtruth_m = [exp_data.iloc[i][name] for name in grdtruth_moments]
     groundtruth.append(grdtruth)
+    groundtruth_m.append(grdtruth_m)
 
-plot_results(time_grdtruth, groundtruth, times, time_left_on_ground, time_right_on_ground, forces, left_forces, right_forces, cops, right_foot_position, left_foot_position, right_foot_usage)
+plot_results(time_grdtruth, groundtruth, groundtruth_m, times, \
+    time_left_on_ground, time_right_on_ground, forces, left_forces, right_forces, \
+    cops, right_foot_position, left_foot_position, right_foot_usage, \
+    moments, left_moments, right_moments)
