@@ -23,8 +23,8 @@ calcn_r = model.updBodySet().get('calcn_r')
 calcn_l = model.updBodySet().get('calcn_l')
 toes_r = model.updBodySet().get('toes_r')
 toes_l = model.updBodySet().get('toes_l')
-bodies_left = [calcn_l] * 9 + [toes_l]
-bodies_right = [calcn_r] * 9 + [toes_r]
+bodies_left = [calcn_l] * 3 #+ [toes_l]
+bodies_right = [calcn_r] * 3 #+ [toes_r]
 
 points_r = [opensim.Vec3(0, -0.005, 0), opensim.Vec3(0.1, -0.005, 0), 
             opensim.Vec3(0.2, -0.005, 0), opensim.Vec3(0.1, -0.005, 0.05),
@@ -37,6 +37,21 @@ points_l = [opensim.Vec3(0, -0.005, 0), opensim.Vec3(0.1, -0.005, 0),
             opensim.Vec3(0.05, -0.005, -0.025), opensim.Vec3(0.05, -0.005, 0.025),
             opensim.Vec3(0.05, -0.005, -0.025), opensim.Vec3(0.057, 0.0, 0.015)]
 
+points_r = [opensim.Vec3(0.2, -0.005, -0.05),  # Toes
+            opensim.Vec3(0.2, -0.005, 0),  # Toes
+            opensim.Vec3(0.2, -0.005, 0.05),  # Toes
+            opensim.Vec3(0.057, 0.0, -0.015)]  # Toes
+points_l = [opensim.Vec3(0.2, -0.005, -0.05),  # Toes
+            opensim.Vec3(0.2, -0.005, 0),  # Toes
+            opensim.Vec3(0.2, -0.005, 0.05),  # Toes
+            opensim.Vec3(0.057, 0.0, 0.015)]  # Toes
+
+points_r = [opensim.Vec3(0, -0.005, 0),  # Heel
+            opensim.Vec3(0.05, -0.005, -0.025),  # Heel
+            opensim.Vec3(0.05, -0.005, -0.025)]  # Heel
+points_l = [opensim.Vec3(0, -0.005, 0),  # Heel
+            opensim.Vec3(0.05, -0.005, -0.025),  # Heel
+            opensim.Vec3(0.05, -0.005, -0.025)]  # Heel
 assert(ik_data.shape == id_data.shape)
 assert(ik_data.shape[0] == u.shape[0])
 

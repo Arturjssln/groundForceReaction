@@ -24,6 +24,8 @@ parentDir = os.path.dirname(fileDir)
 model_file, ik_data, id_data, u, a, exp_data = import_from_storage(parentDir)
 
 model = opensim.Model(model_file)
+weight = 72.6 #kg
+height = 1.7 #m
 state = model.initSystem()
 coordinate_set = model.updCoordinateSet()
 pelvis = model.updBodySet().get('pelvis')
@@ -130,16 +132,16 @@ for i in range(ik_data.shape[0]):
     else:
         right_foot_usage.append(0.5)
 
-    forces.append(F_e)
-    moments.append(M_e)
+    forces.append(np.asarray(F_e) / weight)
+    moments.append(np.asarray(M_e) / (weight*height))
     
 right_foot_usage = np.array(right_foot_usage)
 spline_interpolation_(right_foot_usage)
 
-right_forces = np.asarray(forces) * np.asarray(right_foot_usage)[:, None]
+right_forces = np.asarray(forces) * np.asarray(right_foot_usage)[:, None] 
 left_forces = np.asarray(forces) * (1 - np.asarray(right_foot_usage))[:, None]
-right_moments = np.asarray(moments) * np.asarray(right_foot_usage)[:, None]
-left_moments = np.asarray(moments) * (1 - np.asarray(right_foot_usage))[:, None]
+right_moments = np.asarray(moments) * np.asarray(right_foot_usage)[:, None] 
+left_moments = np.asarray(moments) * (1 - np.asarray(right_foot_usage))[:, None] 
 
 # Declare groundtruth force names
 grdtruth_force = ['ground_force_vx', 'ground_force_vy', 'ground_force_vz', '1_ground_force_vx', '1_ground_force_vy', '1_ground_force_vz']
@@ -150,8 +152,8 @@ groundtruth_m = []
 for i in range(exp_data.shape[0]):
     time = exp_data.iloc[i]['time']
     time_grdtruth.append(time)
-    grdtruth = [exp_data.iloc[i][name] for name in grdtruth_force]
-    grdtruth_m = [exp_data.iloc[i][name] for name in grdtruth_moments]
+    grdtruth = np.asarray([exp_data.iloc[i][name] for name in grdtruth_force]) / weight
+    grdtruth_m = np.asarray([exp_data.iloc[i][name] for name in grdtruth_moments]) / (weight*height)
     groundtruth.append(grdtruth)
     groundtruth_m.append(grdtruth_m)
 

@@ -228,8 +228,26 @@ def color_background(ax, left_idx, right_idx, times):
     ax.set_position([box.x0, box.y0, box.width*0.7, box.height])
     legend_x = 1
     legend_y = 0.5
-    #ax.legend()
     ax.legend(loc='center left', bbox_to_anchor=(legend_x, legend_y))
+
+
+def plot_events(ax, left = True, right = True):
+    heel_strike_l = [0.01, 1.24]
+    heel_strike_r = [0.62, 1.84]
+    toes_off_l = [0.75, 2]
+    toes_off_r = [0.14, 1.39]
+
+    if right:
+        for i, val in enumerate(heel_strike_r):
+            ax.axvline(val, label = "_"*i + "Right heel strike", linestyle='-.', color='b', lw='0.8')
+        for i, val in enumerate(toes_off_r):
+            ax.axvline(val, label="_"*i + "Right toes off", linestyle=':', color='b', lw='0.8')
+    if left:
+        for i, val in enumerate(heel_strike_l):
+            ax.axvline(val, label="_"*i + "Left heel strike", linestyle='-.', color='r', lw='0.8')
+        for i, val in enumerate(toes_off_l):
+            ax.axvline(val, label="_"*i + "Left toes off", linestyle=':', color='r', lw='0.8')
+
 
 # Calculate distance to closest point on plane XZ
 def minDistance2d(pt1, pts2, pelvis):
@@ -372,18 +390,21 @@ def plot_results(time_grdtruth = None, groundtruth = None, groundtruth_moments =
         ax.plot(time_grdtruth, groundtruth[:, 0] + groundtruth[:, 3], label = 'groundtruth')
         ax.plot(times, forces[:, 0], label = 'prediction')
         ax.set_title('Ground force (x-axis)')
+        plot_events(ax, True, True)
         if display_background:
             color_background(ax, time_left_on_ground, time_right_on_ground, times)
         ax = plt.subplot(312)
         ax.plot(time_grdtruth, groundtruth[:, 1] + groundtruth[:, 4], label = 'groundtruth')
         ax.plot(times, forces[:, 1], label = 'prediction')
         ax.set_title('Ground force (y-axis)')
+        plot_events(ax, True, True)
         if display_background:
             color_background(ax, time_left_on_ground, time_right_on_ground, times)
         ax = plt.subplot(313)
         ax.plot(time_grdtruth, groundtruth[:, 2] + groundtruth[:, 5], label = 'groundtruth')
         ax.plot(times, forces[:, 2], label = 'prediction')
         ax.set_title('Ground force (z-axis)')
+        plot_events(ax, True, True)
         if display_background:
             color_background(ax, time_left_on_ground, time_right_on_ground, times)
 
@@ -393,18 +414,21 @@ def plot_results(time_grdtruth = None, groundtruth = None, groundtruth_moments =
         ax.plot(time_grdtruth, groundtruth[:, 3], label = 'groundtruth')
         ax.plot(times, left_forces[:, 0], label = 'prediction')
         ax.set_title('Ground force (x-axis)')
+        plot_events(ax, True, False)
         if display_background:
             color_background(ax, time_left_on_ground, time_right_on_ground, times)
         ax = plt.subplot(312)
         ax.plot(time_grdtruth, groundtruth[:, 4], label = 'groundtruth')
         ax.plot(times, left_forces[:, 1], label = 'prediction')
         ax.set_title('Ground force (y-axis)')
+        plot_events(ax, True, False)
         if display_background:
             color_background(ax, time_left_on_ground, time_right_on_ground, times)
         ax = plt.subplot(313)
         ax.plot(time_grdtruth, groundtruth[:, 5], label = 'groundtruth')
         ax.plot(times, left_forces[:, 2], label = 'prediction')
         ax.set_title('Ground force (z-axis)')
+        plot_events(ax, True, False)
         if display_background:
             color_background(ax, time_left_on_ground, time_right_on_ground, times)
 
@@ -414,21 +438,23 @@ def plot_results(time_grdtruth = None, groundtruth = None, groundtruth_moments =
         ax.plot(time_grdtruth, groundtruth[:, 0], label = 'groundtruth')
         ax.plot(times, right_forces[:, 0], label = 'prediction')
         ax.set_title('Ground force (x-axis)')
+        plot_events(ax, False, True)
         if display_background:
             color_background(ax, time_left_on_ground, time_right_on_ground, times)
         ax = plt.subplot(312)
         ax.plot(time_grdtruth, groundtruth[:, 1], label = 'groundtruth')
         ax.plot(times, right_forces[:, 1], label = 'prediction')
         ax.set_title('Ground force (y-axis)')
+        plot_events(ax, False, True)
         if display_background:
             color_background(ax, time_left_on_ground, time_right_on_ground, times)
         ax = plt.subplot(313)
         ax.plot(time_grdtruth, groundtruth[:, 2], label = 'groundtruth')
         ax.plot(times, right_forces[:, 2], label = 'prediction')
         ax.set_title('Ground force (z-axis)')
+        plot_events(ax, False, True)
         if display_background:
             color_background(ax, time_left_on_ground, time_right_on_ground, times)
-
     if groundtruth_moments is not None and \
         time_grdtruth is not None and \
         moments is not None and \
@@ -444,18 +470,21 @@ def plot_results(time_grdtruth = None, groundtruth = None, groundtruth_moments =
         ax.plot(time_grdtruth, groundtruth_moments[:, 0] + groundtruth_moments[:, 3], label = 'groundtruth')
         ax.plot(times, moments[:, 0], label = 'prediction')
         ax.set_title('Ground moments (x-axis)')
+        plot_events(ax, True, True)
         if display_background:
             color_background(ax, time_left_on_ground, time_right_on_ground, times)
         ax = plt.subplot(312)
         ax.plot(time_grdtruth, groundtruth_moments[:, 1] + groundtruth_moments[:, 4], label = 'groundtruth')
         ax.plot(times, moments[:, 1], label = 'prediction')
         ax.set_title('Ground moments (y-axis)')
+        plot_events(ax, True, True)
         if display_background:
             color_background(ax, time_left_on_ground, time_right_on_ground, times)
         ax = plt.subplot(313)
         ax.plot(time_grdtruth, groundtruth_moments[:, 2] + groundtruth_moments[:, 5], label = 'groundtruth')
         ax.plot(times, moments[:, 2], label = 'prediction')
         ax.set_title('Ground moments (z-axis)')
+        plot_events(ax, True, True)
         if display_background:
             color_background(ax, time_left_on_ground, time_right_on_ground, times)
 
@@ -465,18 +494,21 @@ def plot_results(time_grdtruth = None, groundtruth = None, groundtruth_moments =
         ax.plot(time_grdtruth, groundtruth_moments[:, 3], label = 'groundtruth')
         ax.plot(times, left_moments[:, 0], label = 'prediction')
         ax.set_title('Ground moments (x-axis)')
+        plot_events(ax, True, False)
         if display_background:
             color_background(ax, time_left_on_ground, time_right_on_ground, times)
         ax = plt.subplot(312)
         ax.plot(time_grdtruth, groundtruth_moments[:, 4], label = 'groundtruth')
         ax.plot(times, left_moments[:, 1], label = 'prediction')
         ax.set_title('Ground moments (y-axis)')
+        plot_events(ax, True, False)
         if display_background:
             color_background(ax, time_left_on_ground, time_right_on_ground, times)
         ax = plt.subplot(313)
         ax.plot(time_grdtruth, groundtruth_moments[:, 5], label = 'groundtruth')
         ax.plot(times, left_moments[:, 2], label = 'prediction')
         ax.set_title('Ground moments (z-axis)')
+        plot_events(ax, True, False)
         if display_background:
             color_background(ax, time_left_on_ground, time_right_on_ground, times)
 
@@ -486,18 +518,21 @@ def plot_results(time_grdtruth = None, groundtruth = None, groundtruth_moments =
         ax.plot(time_grdtruth, groundtruth_moments[:, 0], label = 'groundtruth')
         ax.plot(times, right_moments[:, 0], label = 'prediction')
         ax.set_title('Ground moments (x-axis)')
+        plot_events(ax, False, True)
         if display_background:
             color_background(ax, time_left_on_ground, time_right_on_ground, times)
         ax = plt.subplot(312)
         ax.plot(time_grdtruth, groundtruth_moments[:, 1], label = 'groundtruth')
         ax.plot(times, right_moments[:, 1], label = 'prediction')
         ax.set_title('Ground moments (y-axis)')
+        plot_events(ax, False, True)
         if display_background:
             color_background(ax, time_left_on_ground, time_right_on_ground, times)
         ax = plt.subplot(313)
         ax.plot(time_grdtruth, groundtruth_moments[:, 2], label = 'groundtruth')
         ax.plot(times, right_moments[:, 2], label = 'prediction')
         ax.set_title('Ground moments (z-axis)')
+        plot_events(ax, False, True)
         if display_background:
             color_background(ax, time_left_on_ground, time_right_on_ground, times)
 
@@ -539,6 +574,7 @@ def plot_results(time_grdtruth = None, groundtruth = None, groundtruth_moments =
         ax.plot(times, 100 - right_foot_usage*100, label='Left foot')
         ax.set_title('Pourcentage of force applied on each foot')
         ax.set_ylabel('Weighting factor (in %)')
+        plot_events(ax, True, True)
         if display_background:
             color_background(ax, time_left_on_ground, time_right_on_ground, times)
 
@@ -587,7 +623,7 @@ def spline_interpolation_(right_foot_usage):
             cs = CubicSpline(idx, vals)
         elif i == len(bornes)-1 and couple[1] > len(right_foot_usage)-4:
             idx = [couple[0]-3, couple[0]-2, couple[0]-1, couple[1]+1, couple[1]+2, couple[1]+3]
-            vals = [right_foot_usage[i] for i in [couple[0]-3, couple[0]-2, couple[0]-1]] + [1, 1, 1]
+            vals = [right_foot_usage[i] for i in [couple[0]-3, couple[0]-2, couple[0]-1]] + [0, 0, 0]
             cs = CubicSpline(idx, vals)
         else:
             idx = [couple[0]-3, couple[0]-2, couple[0]-1, couple[1]+1, couple[1]+2, couple[1]+3]
