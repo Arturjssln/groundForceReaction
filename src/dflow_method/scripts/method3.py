@@ -53,25 +53,29 @@ assert(ik_data.shape == id_data.shape)
 assert(ik_data.shape[0] == u.shape[0])
 
 # Declare moment names
-moments = ['pelvis_list_moment', 'pelvis_rotation_moment', 'pelvis_tilt_moment']
+moment = ['pelvis_list_moment', 'pelvis_rotation_moment', 'pelvis_tilt_moment']
 # Declare force names
 force = ['pelvis_tx_force', 'pelvis_ty_force', 'pelvis_tz_force']
 
 forces = []
 left_forces = []
 right_forces = []
+moments = []
+left_moments = []
+right_moments = []
 times = []
 cops = []
 heel_r = []
 toes_r = []
 heel_l = []
 toes_l = []
-pelvis_s = []
 time_left_on_ground = []
 time_right_on_ground = []
 left_foot_position = []
 right_foot_position = []
 right_foot_usage = []
+left_on_ground = True
+right_on_ground = True
 for i in range(ik_data.shape[0]):
 
     time = id_data.iloc[i]['time']
@@ -79,7 +83,7 @@ for i in range(ik_data.shape[0]):
 
     # get residual moment and forces from inverse dynamics (expressed
     # in local frame of pelvis)
-    M_p = [id_data.iloc[i][name] for name in moments]
+    M_p = [id_data.iloc[i][name] for name in moment]
     F_p = [id_data.iloc[i][name] for name in force]
 
     # update model pose
@@ -100,24 +104,42 @@ for i in range(ik_data.shape[0]):
     R_GP = simtk_matrix_to_np_array(R_PG).transpose()
     F_e = R_GP.dot(F_p)
     M_e = R_GP.dot(M_p)
-
     friction_coeff = 0.8
     assert(F_e[1] > friction_coeff*F_e[0] and F_e[1] > friction_coeff*F_e[2])
 
     # Determine which foot is on ground
-    right_state = [ np.asarray([ np.asarray([body_part.findStationLocationInGround(state, position)[i] for i in range(3)]),
-                    np.asarray([body_part.findStationVelocityInGround(state, position)[i] for i in range(3)])]) for body_part, position in zip(bodies_right, points_r)]
-    left_state = [  np.asarray([np.asarray([body_part.findStationLocationInGround(state, position)[i] for i in range(3)]),
-                    np.asarray([body_part.findStationVelocityInGround(state, position)[i] for i in range(3)])]) for body_part, position in zip(bodies_left, points_l)]
-    pelvis_speed = np.asarray([pelvis.findStationVelocityInGround(state, opensim.Vec3(0, 0, 0))[i] for i in range(3)])
-    forces.append(F_e)
-    left_on_ground = compute_force_3(left_state, pelvis_speed, left_forces, heel_l, toes_l)
-    right_on_ground = compute_force_3(right_state, pelvis_speed, right_forces, heel_r, toes_r)
-    pelvis_s.append(np.sqrt(np.sum(pelvis_speed**2)))
+    right_state = np.array([np.asarray([np.asarray([body_part.findStationLocationInGround(state, position)[i] for i in range(3)]),
+                    np.asarray([body_part.findStationVelocityInGround(state, position)[i] for i in range(3)])]) for body_part, position in zip(bodies_right, points_r)])
+    left_state = np.array([  np.asarray([np.asarray([body_part.findStationLocationInGround(state, position)[i] for i in range(3)]),
+                    np.asarray([body_part.findStationVelocityInGround(state, position)[i] for i in range(3)])]) for body_part, position in zip(bodies_left, points_l)])
+
+    left_on_ground = compute_force_3(left_state, left_forces, heel_l, toes_l, left_on_ground, pelvis_speed=1)
+    right_on_ground = compute_force_3(right_state, right_forces, heel_r, toes_r, right_on_ground, pelvis_speed=1)
+
     if left_on_ground:
         time_left_on_ground.append(i)
     if right_on_ground:
         time_right_on_ground.append(i)
+
+    if left_on_ground and right_on_ground:
+        right_foot_usage.append(0.5)
+    elif left_on_ground and not right_on_ground:
+        right_foot_usage.append(0)
+    elif not left_on_ground and right_on_ground:
+        right_foot_usage.append(1)
+    else:
+        right_foot_usage.append(0.5)
+
+    forces.append(F_e)
+    moments.append(M_e)
+    
+right_foot_usage = np.array(right_foot_usage)
+spline_interpolation_(right_foot_usage)
+
+right_forces = np.asarray(forces) * np.asarray(right_foot_usage)[:, None]
+left_forces = np.asarray(forces) * (1 - np.asarray(right_foot_usage))[:, None]
+right_moments = np.asarray(moments) * np.asarray(right_foot_usage)[:, None]
+left_moments = np.asarray(moments) * (1 - np.asarray(right_foot_usage))[:, None]
 
 # Declare groundtruth force names
 grdtruth_force = ['ground_force_vx', 'ground_force_vy', 'ground_force_vz', '1_ground_force_vx', '1_ground_force_vy', '1_ground_force_vz']
@@ -133,20 +155,7 @@ for i in range(exp_data.shape[0]):
     groundtruth.append(grdtruth)
     groundtruth_m.append(grdtruth_m)
 
-#plot_results(time_grdtruth, groundtruth, groundtruth_m, times, time_left_on_ground, time_right_on_ground, forces, left_forces, right_forces)
+plot_results(time_grdtruth, groundtruth, groundtruth_m, times, time_left_on_ground, time_right_on_ground, forces, left_forces,
+             right_forces, right_foot_usage=right_foot_usage, moments=moments, left_moments=left_moments, right_moments=right_moments)
 
-plt.figure()
-ax = plt.subplot(211)
-ax.set_title("Left leg average speed")
-ax.plot(times, heel_l, label = 'heel')
-ax.plot(times, toes_l, label = 'toes')
-ax.plot(times, pelvis_s, label = 'pelvis')
-plt.legend()
-ax = plt.subplot(212)
-ax.set_title("Right leg average speed")
-ax.plot(times, heel_r, label = 'heel')
-ax.plot(times, toes_r, label = 'toes')
-ax.plot(times, pelvis_s, label='pelvis')
-plt.legend()
-plt.show()
 

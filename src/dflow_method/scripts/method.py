@@ -125,40 +125,31 @@ for i in range(ik_data.shape[0]):
     w_l = d_r / (d_l + d_r)
 
     forces.append(F_e)
+    moments.append(M_e)
     if left_ground and right_ground:
         left_forces.append(F_e * w_l)
         right_forces.append(F_e * w_r)
+        left_moments.append(F_e * w_l)
+        right_moments.append(F_e * w_r)
+        right_foot_usage.append(w_r)
+
     elif left_ground and not right_ground :
         left_forces.append(F_e)
         right_forces.append([0, 0, 0])
+        left_moments.append(F_e)
+        right_moments.append([0, 0, 0])
+        right_foot_usage.append(0)
     elif not left_ground and right_ground :
         right_forces.append(F_e)
         left_forces.append([0, 0, 0])
+        left_moments.append([0, 0, 0])
+        right_moments.append(F_e)
+        right_foot_usage.append(1)
     else:
         right_forces.append([0, 0, 0])
         left_forces.append([0, 0, 0])
-
-    moments.append(M_e)
-    if left_ground and right_ground:
-        left_moments.append(F_e * w_l)
-        right_moments.append(F_e * w_r)
-    elif left_ground and not right_ground:
-        left_moments.append(F_e)
-        right_moments.append([0, 0, 0])
-    elif not left_ground and right_ground:
-        left_moments.append([0, 0, 0])
-        right_moments.append(F_e)
-    else:
         left_moments.append([0, 0, 0])
         right_moments.append([0, 0, 0])
-
-    if left_ground and right_ground:
-        right_foot_usage.append(w_r)
-    elif left_ground and not right_ground :
-        right_foot_usage.append(0)
-    elif not left_ground and right_ground :
-        right_foot_usage.append(1)
-    else:
         right_foot_usage.append(0.5)
 
 

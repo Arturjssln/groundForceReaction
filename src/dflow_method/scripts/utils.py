@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
-
+from scipy.interpolate import CubicSpline
 
 def osim_array_to_list(array):
     """Convert OpenSim::Array<T> to Python list.
@@ -320,26 +320,29 @@ def compute_force_2(states, thresholds, force, forces):
     forces.append(force_smooth)
     return on_floor
     
-def compute_force_3(states, pelvis_speed, forces, heel, toes):
+def compute_force_3(states, forces, heel, toes, on_ground, pelvis_speed = 1):
     """
     Return Bool that determines if feet is on the floor
     Parameters
     ----------
     """
-    forces.append([0,0,0])
-    on_floor = False
 
     states = np.array(states)
-    pelvis_norm = np.sqrt(np.sum(pelvis_speed**2))
-    thres1 = 0.6 * pelvis_norm
-    thres2 = 1.9 * pelvis_norm
+    thres1 = 0.7 * pelvis_speed
+    thres2 = 1.3 * pelvis_speed
     average_heel = np.average(np.sqrt(np.sum(states[:3, 1]**2, axis=1)))
     average_toes = np.average(np.sqrt(np.sum(states[3:, 1]**2, axis=1)))
-    print("pelvis speed (x, y, z):\n", pelvis_speed)
-    print("point on foot speed (x, y, z):\n", states[:, 1])
     heel.append(average_heel)
     toes.append(average_toes)
-    return on_floor
+
+    # FSM
+    if on_ground:
+        if average_heel > thres2:
+            on_ground = False
+    else:
+        if average_heel < thres1:
+            on_ground = True
+    return on_ground
 
 def plot_results(time_grdtruth = None, groundtruth = None, groundtruth_moments = None, times = None, \
                     time_left_on_ground = None, time_right_on_ground = None, \
@@ -554,3 +557,42 @@ def moving_average(forces, width=5):
     for i in range(3):
         out[:,i] = np.convolve(out[:,i], np.ones(width)/width, mode='same')
     return out
+
+
+def find_bornes(right_foot_usage):
+    right_foot_usage = np.array(right_foot_usage)
+    elements = np.where(right_foot_usage == 0.5)[0]
+    bornes = []
+    couple = []
+    for e in elements:
+        if len(couple) == 0:
+            couple.append(e)
+            last_id = e
+        elif e - last_id > 1:
+            couple.append(last_id)
+            bornes.append(couple)
+            couple = [e]
+        last_id = e
+    couple.append(last_id)
+    bornes.append(couple)
+    return bornes
+
+
+def spline_interpolation_(right_foot_usage):
+    bornes = find_bornes(right_foot_usage)
+    for i, couple in enumerate(bornes):
+        if i == 0 and couple[0] < 3:
+            idx = [couple[0]-3, couple[0]-2, couple[0]-1, couple[1]+1, couple[1]+2, couple[1]+3]
+            vals = [1, 1, 1] + [right_foot_usage[i] for i in [couple[1]+1, couple[1]+2, couple[1]+3]]
+            cs = CubicSpline(idx, vals)
+        elif i == len(bornes)-1 and couple[1] > len(right_foot_usage)-4:
+            idx = [couple[0]-3, couple[0]-2, couple[0]-1, couple[1]+1, couple[1]+2, couple[1]+3]
+            vals = [right_foot_usage[i] for i in [couple[0]-3, couple[0]-2, couple[0]-1]] + [1, 1, 1]
+            cs = CubicSpline(idx, vals)
+        else:
+            idx = [couple[0]-3, couple[0]-2, couple[0]-1, couple[1]+1, couple[1]+2, couple[1]+3]
+            vals = [right_foot_usage[i] for i in idx]
+            cs = CubicSpline(idx, vals)
+        right_foot_usage[couple[0]:couple[1]+1] = cs(np.linspace(couple[0], couple[1], couple[1]-couple[0]+1))
+
+    
