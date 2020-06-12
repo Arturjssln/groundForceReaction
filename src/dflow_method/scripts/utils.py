@@ -5,6 +5,7 @@
 import re
 import os, sys
 import opensim
+import csv
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -82,6 +83,31 @@ def read_from_storage(model_file, file_name):
     df = pd.DataFrame(data, columns=labels)
     df.index = df.time
     return df
+
+
+def write_to_storage(path, data=None, labels=None, prepare=False):
+    if prepare:
+        with open(path, "w") as f:
+            f.write("subject01_walk1_grf.mot \nversion=1 \nnRows=151 \nnColumns=19 \ninDegrees=yes \nendheader	\n")
+            tsv_writer = csv.writer(f, delimiter='\t')
+            tsv_writer.writerow(labels)
+    else:
+        with open(path, "a") as f:
+            tsv_writer = csv.writer(f, delimiter='\t')
+            tsv_writer.writerow(data)
+
+
+def write_results(path, times, forces, position, l_forces, l_position, moments, l_moments):
+    times = np.array(times)
+    forces = np.array(forces)
+    position = np.array(position)
+    l_forces = np.array(l_forces)
+    l_position = np.array(l_position)
+    moments = np.array(moments)
+    l_moments = np.array(l_moments)
+    data = np.concatenate((times.reshape(-1, 1), forces, position, l_forces, l_position, moments, l_moments), axis=1)
+    for row in data:
+        write_to_storage(path, data=row)
 
 
 def index_containing_substring(list_str, pattern):
@@ -212,42 +238,6 @@ def import_from_storage(parentDir):
 
     return (model_file, ik_data, id_data, u, a, exp_data)
 
-def color_background(ax, left_idx, right_idx, times):
-    l = 0
-    for i in left_idx:
-        if i+1 < len(times):
-            ax.axvspan(times[i], times[i+1], facecolor='g', alpha=0.2, label =  "_"*l + "Left foot on groud")
-            l = 1
-    l = 0
-    for i in right_idx:
-        if i+1 < len(times):
-            ax.axvspan(times[i], times[i+1], facecolor='r', alpha=0.2, label =  "_"*l + "Right foot on ground")
-            l = 1
-
-    box = ax.get_position()
-    ax.set_position([box.x0, box.y0, box.width*0.7, box.height])
-    legend_x = 1
-    legend_y = 0.5
-    ax.legend(loc='center left', bbox_to_anchor=(legend_x, legend_y))
-
-
-def plot_events(ax, left = True, right = True):
-    heel_strike_l = [0.01, 1.24]
-    heel_strike_r = [0.62, 1.84]
-    toes_off_l = [0.75, 2]
-    toes_off_r = [0.14, 1.39]
-
-    if right:
-        for i, val in enumerate(heel_strike_r):
-            ax.axvline(val, label = "_"*i + "Right heel strike", linestyle='-.', color='b', lw='0.8')
-        for i, val in enumerate(toes_off_r):
-            ax.axvline(val, label="_"*i + "Right toes off", linestyle=':', color='b', lw='0.8')
-    if left:
-        for i, val in enumerate(heel_strike_l):
-            ax.axvline(val, label="_"*i + "Left heel strike", linestyle='-.', color='r', lw='0.8')
-        for i, val in enumerate(toes_off_l):
-            ax.axvline(val, label="_"*i + "Left toes off", linestyle=':', color='r', lw='0.8')
-
 
 # Calculate distance to closest point on plane XZ
 def minDistance2d(pt1, pts2, pelvis):
@@ -279,8 +269,6 @@ def compute_force(states, thresholds, force, forces):
 
     Parameters
     ----------
-
-
     """
     on_floor = True
     min_y_ratio = 1
@@ -366,7 +354,8 @@ def plot_results(time_grdtruth = None, groundtruth = None, groundtruth_moments =
                     time_left_on_ground = None, time_right_on_ground = None, \
                     forces = None, left_forces = None, right_forces = None, cops = None,\
                     right_foot_position = None, left_foot_position = None, right_foot_usage = None, \
-                    moments = None, left_moments = None, right_moments = None):
+                    moments = None, left_moments = None, right_moments = None, 
+                    cops_l = None, cops_r = None):
     if times is not None and \
         time_left_on_ground is not None and \
         time_right_on_ground is not None:
@@ -565,6 +554,44 @@ def plot_results(time_grdtruth = None, groundtruth = None, groundtruth_moments =
         if display_background:
             color_background(ax, time_left_on_ground, time_right_on_ground, times)
 
+    if cops is not None and \
+        cops_l is not None and \
+        cops_r is not None:
+
+        cops = np.asarray(cops)
+        cops_l = np.asarray(cops_l)
+        cops_r = np.asarray(cops_r)
+        plt.figure()
+        ax = plt.subplot(221)
+        ax.plot(time_grdtruth, cops[:, 0], label='groundtruth')
+        ax.plot(times, cops_r[:, 0], label='estimation')
+        ax.set_title('Right (x-axis)')
+        if display_background:
+            color_background(ax, time_left_on_ground, time_right_on_ground, times)
+
+        ax = plt.subplot(222)
+        ax.plot(time_grdtruth, cops[:, 2], label='groundtruth')
+        ax.plot(times, cops_r[:, 2], label='estimation')
+        ax.set_title('Right (z-axis)')
+        if display_background:
+            color_background(ax, time_left_on_ground, time_right_on_ground, times)
+
+        ax = plt.subplot(223)
+        ax.plot(time_grdtruth, cops[:, 3], label='groundtruth')
+        ax.plot(times, cops_l[:, 0], label='estimation')
+        ax.set_title('Left (x-axis)')
+        if display_background:
+            color_background(ax, time_left_on_ground, time_right_on_ground, times)
+
+        ax = plt.subplot(224)
+        ax.plot(time_grdtruth, cops[:, 5], label='groundtruth')
+        ax.plot(times, cops_l[:, 2], label='estimation')
+        ax.set_title('Left (z-axis)')
+        if display_background:
+            color_background(ax, time_left_on_ground, time_right_on_ground, times)
+
+
+
 
     if right_foot_usage is not None:
         right_foot_usage = np.asarray(right_foot_usage)
@@ -586,6 +613,43 @@ def plot_results(time_grdtruth = None, groundtruth = None, groundtruth_moments =
         input("hit [enter] to end.")
     finally:
         plt.close('all')
+
+
+def color_background(ax, left_idx, right_idx, times):
+    l = 0
+    for i in left_idx:
+        if i+1 < len(times):
+            ax.axvspan(times[i], times[i+1], facecolor='g', alpha=0.2, label="_"*l + "Left foot on groud")
+            l = 1
+    l = 0
+    for i in right_idx:
+        if i+1 < len(times):
+            ax.axvspan(times[i], times[i+1], facecolor='r', alpha=0.2, label="_"*l + "Right foot on ground")
+            l = 1
+
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width*0.7, box.height])
+    legend_x = 1
+    legend_y = 0.5
+    ax.legend(loc='center left', bbox_to_anchor=(legend_x, legend_y))
+
+
+def plot_events(ax, left=True, right=True):
+    heel_strike_l = [0.01, 1.24]
+    heel_strike_r = [0.62, 1.84]
+    toes_off_l = [0.75, 2]
+    toes_off_r = [0.14, 1.39]
+
+    if right:
+        for i, val in enumerate(heel_strike_r):
+            ax.axvline(val, label="_"*i + "Right heel strike", linestyle='-.', color='r', lw='0.8')
+        for i, val in enumerate(toes_off_r):
+            ax.axvline(val, label="_"*i + "Right toes off", linestyle=':', color='r', lw='0.8')
+    if left:
+        for i, val in enumerate(heel_strike_l):
+            ax.axvline(val, label="_"*i + "Left heel strike", linestyle='-.', color='g', lw='0.8')
+        for i, val in enumerate(toes_off_l):
+            ax.axvline(val, label="_"*i + "Left toes off", linestyle=':', color='g', lw='0.8')
 
 
 def moving_average(forces, width=5):
@@ -632,3 +696,10 @@ def spline_interpolation_(right_foot_usage):
         right_foot_usage[couple[0]:couple[1]+1] = cs(np.linspace(couple[0], couple[1], couple[1]-couple[0]+1))
 
     
+def find_cop(bodies, points, state):
+       pos = np.array([np.asarray([body.findStationLocationInGround(state, pt)[i] for i in range(3)]) for body, pt in zip(bodies, points)])
+       heights = pos[:, 1] * 100
+       softmax = np.exp(-heights)/sum(np.exp(-heights))
+       cop = np.average(pos, axis=0, weights=softmax)
+       cop[1] = 0
+       return cop

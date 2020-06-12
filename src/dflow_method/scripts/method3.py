@@ -22,10 +22,18 @@ parentDir = os.path.dirname(fileDir)
 
 #initilization
 model_file, ik_data, id_data, u, a, exp_data = import_from_storage(parentDir)
+write_to_storage('../results/prediction.mot', 
+                labels=['time', 'ground_force_vx','ground_force_vy','ground_force_vz', 
+                    'ground_force_px', 'ground_force_py', 'ground_force_pz', 
+                    '1_ground_force_vx', '1_ground_force_vy', '1_ground_force_vz',
+                    '1_ground_force_px', '1_ground_force_py', '1_ground_force_pz',
+                    'ground_torque_x', 'ground_torque_y', 'ground_torque_z', 
+                    '1_ground_torque_x', '1_ground_torque_y', '1_ground_torque_z'],
+                prepare=True)
 
 model = opensim.Model(model_file)
 weight = 72.6 #kg
-height = 1.7 #m
+height = 1.8 #m
 state = model.initSystem()
 coordinate_set = model.updCoordinateSet()
 pelvis = model.updBodySet().get('pelvis')
@@ -39,17 +47,43 @@ bodies_right = [calcn_r] * 6 + [toes_r]
 points_r = [opensim.Vec3(0, -0.005, 0),  # Heel
             opensim.Vec3(0.05, -0.005, -0.025), # Heel
             opensim.Vec3(0.05, -0.005, -0.025), # Heel
-            opensim.Vec3(0.2, -0.005, -0.05), # Toes
-            opensim.Vec3(0.2, -0.005, 0), # Toes
-            opensim.Vec3(0.2, -0.005, 0.05), # Toes
+            opensim.Vec3(0.2, -0.005, -0.05),  # Forefoot
+            opensim.Vec3(0.2, -0.005, 0), # Forefoot
+            opensim.Vec3(0.2, -0.005, 0.05), # Forefoot
             opensim.Vec3(0.057, 0.0, -0.015)] # Toes
 points_l = [opensim.Vec3(0, -0.005, 0),  # Heel
             opensim.Vec3(0.05, -0.005, -0.025), # Heel
-            opensim.Vec3(0.05, -0.005, -0.025), # Heel
-            opensim.Vec3(0.2, -0.005, -0.05), # Toes
-            opensim.Vec3(0.2, -0.005, 0), # Toes
-            opensim.Vec3(0.2, -0.005, 0.05), # Toes
+            opensim.Vec3(0.05, -0.005, 0.025), # Heel
+            opensim.Vec3(0.2, -0.005, -0.05),  # Forefoot
+            opensim.Vec3(0.2, -0.005, 0),  # Forefoot
+            opensim.Vec3(0.2, -0.005, 0.05), # Forefoot
             opensim.Vec3(0.057, 0.0, 0.015)] # Toes
+
+cop_bodies_left = [calcn_l] * 9 + [toes_l] * 2 
+cop_bodies_right = [calcn_r] * 9 + [toes_r] * 2
+cop_points_r = [opensim.Vec3(0, -0.005, 0),  # Heel
+                opensim.Vec3(0.05, -0.005, -0.025),  # Heel
+                opensim.Vec3(0.05, -0.005, 0.025),  # Heel
+                opensim.Vec3(0.1, -0.005, 0),  # Midfoot
+                opensim.Vec3(0.1, -0.005, 0.04),  # Midfoot
+                opensim.Vec3(0.1, -0.005, -0.04),  # Midfoot
+                opensim.Vec3(0.2, -0.005, -0.05),  # Forefoot
+                opensim.Vec3(0.2, -0.005, 0),  # Forefoot
+                opensim.Vec3(0.2, -0.005, 0.05),  # Forefoot
+                opensim.Vec3(0.07, 0, -0.02), # Toes
+                opensim.Vec3(0.04, 0, 0.025)]  # Toes
+cop_points_l = [opensim.Vec3(0, -0.005, 0),  # Heel
+                opensim.Vec3(0.05, -0.005, -0.025),  # Heel
+                opensim.Vec3(0.05, -0.005, 0.025),  # Heel
+                opensim.Vec3(0.1, -0.005, 0),  # Midfoot
+                opensim.Vec3(0.1, -0.005, 0.04),  # Midfoot
+                opensim.Vec3(0.1, -0.005, -0.04),  # Midfoot
+                opensim.Vec3(0.2, -0.005, -0.05),  # Forefoot
+                opensim.Vec3(0.2, -0.005, 0),  # Forefoot
+                opensim.Vec3(0.2, -0.005, 0.05),  # Forefoot
+                opensim.Vec3(0.07, 0, 0.02),  # Toes
+                opensim.Vec3(0.04, 0, -0.025)]  # Toes
+
 
 assert(ik_data.shape == id_data.shape)
 assert(ik_data.shape[0] == u.shape[0])
@@ -66,15 +100,14 @@ moments = []
 left_moments = []
 right_moments = []
 times = []
-cops = []
 heel_r = []
 toes_r = []
 heel_l = []
 toes_l = []
 time_left_on_ground = []
 time_right_on_ground = []
-left_foot_position = []
-right_foot_position = []
+cops_l = []
+cops_r = []
 right_foot_usage = []
 left_on_ground = True
 right_on_ground = True
@@ -134,30 +167,51 @@ for i in range(ik_data.shape[0]):
 
     forces.append(np.asarray(F_e) / weight)
     moments.append(np.asarray(M_e) / (weight*height))
+
+    cop_l = find_cop(cop_bodies_left, cop_points_l, state)
+    cop_r = find_cop(cop_bodies_right, cop_points_r, state)
+    cops_l.append(cop_l)
+    cops_r.append(cop_r)
     
 right_foot_usage = np.array(right_foot_usage)
 spline_interpolation_(right_foot_usage)
 
 right_forces = np.asarray(forces) * np.asarray(right_foot_usage)[:, None] 
 left_forces = np.asarray(forces) * (1 - np.asarray(right_foot_usage))[:, None]
-right_moments = np.asarray(moments) * np.asarray(right_foot_usage)[:, None] 
-left_moments = np.asarray(moments) * (1 - np.asarray(right_foot_usage))[:, None] 
+#right_moments = np.asarray(moments) * np.asarray(right_foot_usage)[:, None] 
+#left_moments = np.asarray(moments) * (1 - np.asarray(right_foot_usage))[:, None] 
+right_moments = np.zeros_like(right_forces)
+left_moments = np.zeros_like(left_forces)
+
+#right_moments[:, 2] = - right_forces[:, 1] * np.array(cops_r)[:, 0] / height
+#left_moments[:, 2] = - left_forces[:, 1] * np.array(cops_l)[:, 0] / height
+#right_moments[:, 0] = right_forces[:, 1] * np.array(cops_r)[:, 2] / height
+#left_moments[:, 0] = left_forces[:, 1] * np.array(cops_l)[:, 2] / height
 
 # Declare groundtruth force names
 grdtruth_force = ['ground_force_vx', 'ground_force_vy', 'ground_force_vz', '1_ground_force_vx', '1_ground_force_vy', '1_ground_force_vz']
 grdtruth_moments = ['ground_torque_x', 'ground_torque_y', 'ground_torque_z', '1_ground_torque_x', '1_ground_torque_y', '1_ground_torque_z']
+cops_name = ['ground_force_px', 'ground_force_py', 'ground_force_pz', '1_ground_force_px', '1_ground_force_py', '1_ground_force_pz']
+
 time_grdtruth = []
 groundtruth = []
 groundtruth_m = []
+cops = []
 for i in range(exp_data.shape[0]):
     time = exp_data.iloc[i]['time']
     time_grdtruth.append(time)
     grdtruth = np.asarray([exp_data.iloc[i][name] for name in grdtruth_force]) / weight
     grdtruth_m = np.asarray([exp_data.iloc[i][name] for name in grdtruth_moments]) / (weight*height)
+    cop = np.asarray([exp_data.iloc[i][name] for name in cops_name])
     groundtruth.append(grdtruth)
     groundtruth_m.append(grdtruth_m)
+    cops.append(cop)
+
+# Save results and plot them
+write_results('../results/prediction.mot', times, np.asarray(right_forces)*weight, cops_r,
+              np.asarray(left_forces)*weight, cops_l, np.asarray(right_moments)*weight*height, np.asarray(left_moments)*weight*height)
 
 plot_results(time_grdtruth, groundtruth, groundtruth_m, times, time_left_on_ground, time_right_on_ground, forces, left_forces,
-             right_forces, right_foot_usage=right_foot_usage, moments=moments, left_moments=left_moments, right_moments=right_moments)
-
+             right_forces, right_foot_usage=right_foot_usage, moments=moments, left_moments=left_moments, right_moments=right_moments,
+             cops=cops, cops_l=cops_l, cops_r=cops_r)
 
