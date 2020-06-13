@@ -590,9 +590,6 @@ def plot_results(time_grdtruth = None, groundtruth = None, groundtruth_moments =
         if display_background:
             color_background(ax, time_left_on_ground, time_right_on_ground, times)
 
-
-
-
     if right_foot_usage is not None:
         right_foot_usage = np.asarray(right_foot_usage)
         plt.figure()
@@ -701,5 +698,39 @@ def find_cop(bodies, points, state):
        heights = pos[:, 1] * 100
        softmax = np.exp(-heights)/sum(np.exp(-heights))
        cop = np.average(pos, axis=0, weights=softmax)
-       cop[1] = 0
+       cop[1] = -0.0075
        return cop
+
+
+def compare_results(time_grdtruth, groundtruth, groundtruth_m, cops, times, left_forces, right_forces, left_moments, right_moments, cops_l, cops_r):
+    rmse_forces = np.array([0,0,0,0,0,0], dtype=np.float64)
+    rmse_moments = np.array([0, 0, 0, 0, 0, 0], dtype=np.float64)
+    rmse_cops = np.array([0,0,0,0,0,0], dtype=np.float64)
+    for time, force_l, force_r, moment_l, moment_r, cop_l, cop_r in zip(times, left_forces, right_forces, left_moments, right_moments, cops_l, cops_r): 
+        idx = find_closest_time(time_grdtruth, time)
+        rmse_forces += np.concatenate(((force_r - groundtruth[idx, :3])**2, (force_l - groundtruth[idx, 3:])**2), axis=0)
+        rmse_moments += np.concatenate(((moment_r - groundtruth_m[idx, :3])**2, (moment_l - groundtruth_m[idx, 3:])**2), axis=0)
+        rmse_cops += np.concatenate(((cop_r - cops[idx, :3])**2, (cop_l - cops[idx, 3:])**2), axis=0)
+
+
+    rmse_forces /= (np.max(groundtruth, axis=0) - np.min(groundtruth, axis=0))**2 * times.shape[0]
+    rmse_moments /= (np.max(groundtruth_m, axis=0) - np.min(groundtruth_m, axis=0))**2 * times.shape[0]
+    rmse_cops /= np.where((np.max(cops, axis=0) - np.min(cops, axis=0)) == 0, 1, (np.max(cops, axis=0) - np.min(cops, axis=0)))**2 * times.shape[0]
+    print_rmse(rmse_forces, rmse_moments, rmse_cops)
+
+def find_closest_time(times, time):
+    idx = (np.abs(times - time)).argmin() 
+    return idx
+
+def print_rmse(rmse_forces, rmse_moments, rmse_cops):
+    legend = ['right, x', 'right, y', 'right, z', 'left, x', 'left, y', 'left, z']
+    forces = 'nRMSE forces:\n'
+    moments = 'nRMSE moments:\n'
+    cops = 'nRMSE cops:\n'
+    for l, f, m, c in zip(legend, rmse_forces, rmse_moments, rmse_cops):
+        forces += l +' = {:.02f}%\n'.format(f*100)
+        moments += l + ' = {:.02f}%\n'.format(m*100)
+        cops += l + ' = {:.02f}%\n'.format(c*100)
+    print(forces)
+    print(moments)
+    print(cops)

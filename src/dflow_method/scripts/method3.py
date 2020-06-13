@@ -207,11 +207,33 @@ for i in range(exp_data.shape[0]):
     groundtruth_m.append(grdtruth_m)
     cops.append(cop)
 
+times = np.asarray(times)
+time_grdtruth = np.asarray(time_grdtruth)
+groundtruth = np.asarray(groundtruth)
+groundtruth_m = np.asarray(groundtruth_m)
+cops = np.asarray(cops)
+forces = np.asarray(forces)
+left_forces = np.asarray(left_forces)
+right_forces = np.asarray(right_forces)
+moments = np.asarray(moments)
+left_moments = np.asarray(left_moments)
+right_moments = np.asarray(right_moments)
+heel_r = np.asarray(heel_r)
+toes_r = np.asarray(toes_r)
+heel_l = np.asarray(heel_l)
+toes_l = np.asarray(toes_l)
+time_left_on_ground = np.asarray(time_left_on_ground)
+time_right_on_ground = np.asarray(time_right_on_ground)
+cops_l = np.asarray(cops_l)
+cops_r = np.asarray(cops_r)
+right_foot_usage = np.asarray(right_foot_usage)
+
 # Save results and plot them
-write_results('../results/prediction.mot', times, np.asarray(right_forces)*weight, cops_r,
-              np.asarray(left_forces)*weight, cops_l, np.asarray(right_moments)*weight*height, np.asarray(left_moments)*weight*height)
+write_results('../results/prediction.mot', times, right_forces*weight, cops_r,
+              left_forces*weight, cops_l, right_moments*weight*height, left_moments*weight*height)
+
+compare_results(time_grdtruth, groundtruth, groundtruth_m, cops, times, left_forces, right_forces, left_moments, right_moments, cops_l, cops_r)
 
 plot_results(time_grdtruth, groundtruth, groundtruth_m, times, time_left_on_ground, time_right_on_ground, forces, left_forces,
              right_forces, right_foot_usage=right_foot_usage, moments=moments, left_moments=left_moments, right_moments=right_moments,
              cops=cops, cops_l=cops_l, cops_r=cops_r)
-
