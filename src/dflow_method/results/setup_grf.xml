@@ -18,7 +18,7 @@
         <point_identifier> ground_force_p </point_identifier>
         <!--Identifier (string) to locate the torque to be applied in the data
             source.-->
-        <torque_identifier> ground_torque_  </torque_identifier> <!--ground_torque_-->
+        <torque_identifier> ground_torque_ </torque_identifier> <!--ground_torque_-->
         <!--Name of the data source (Storage) that will supply the force data.-->
         <!-- <data_source_name> Unassigned </data_source_name> -->
       </ExternalForce>
@@ -48,13 +48,13 @@
          torque and point of application.Note: this file overrides the
          data source specified by the individual external forces if
          specified.-->
-    <datafile> task_grf.mot </datafile>
+    <datafile> prediction.mot </datafile>
     <!--The option is deprecated and unnecessary to apply external
          loads. A motion file (.mot) or storage file (.sto) containing
          the model kinematics used to transform a point expressed in
          ground to the body of force application.If the point is not
          expressed in ground, the point is not transformed-->
-    <external_loads_model_kinematics_file>../results/model_scaled_Kinematics_q.sto</external_loads_model_kinematics_file>
+    <external_loads_model_kinematics_file>model_scaled_Kinematics_q.sto</external_loads_model_kinematics_file>
     <!--Optional low-pass cut-off frequency for filtering the model
          kinematics corresponding used to transform the point of
          application. A negative value results in no filtering. The

@@ -11,6 +11,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from scipy.interpolate import CubicSpline
+import matplotlib.patches as mpatches
 
 def osim_array_to_list(array):
     """Convert OpenSim::Array<T> to Python list.
@@ -343,7 +344,7 @@ def compute_force_3(states, forces, heel, toes, on_ground, pelvis_speed = 1):
 
     # FSM
     if on_ground:
-        if average_heel > thres2:
+        if average_toes > thres2:
             on_ground = False
     else:
         if average_heel < thres1:
@@ -374,25 +375,27 @@ def plot_results(time_grdtruth = None, groundtruth = None, groundtruth_moments =
         left_forces = np.asarray(left_forces)
         right_forces = np.asarray(right_forces)
         plt.figure()
-        plt.suptitle('Total force')
+        plt.suptitle('Total ground force')
         ax = plt.subplot(311)
-        ax.plot(time_grdtruth, groundtruth[:, 0] + groundtruth[:, 3], label = 'groundtruth')
-        ax.plot(times, forces[:, 0], label = 'prediction')
-        ax.set_title('Ground force (x-axis)')
+        ax.plot(time_grdtruth, groundtruth[:, 0] + groundtruth[:, 3], label='groundtruth', linestyle='--', color='black', lw='0.8')
+        ax.plot(times, forces[:, 0], label = 'prediction', color='black')
+        ax.set_title('x-axis')
         plot_events(ax, True, True)
         if display_background:
             color_background(ax, time_left_on_ground, time_right_on_ground, times)
         ax = plt.subplot(312)
-        ax.plot(time_grdtruth, groundtruth[:, 1] + groundtruth[:, 4], label = 'groundtruth')
-        ax.plot(times, forces[:, 1], label = 'prediction')
-        ax.set_title('Ground force (y-axis)')
+        ax.plot(time_grdtruth, groundtruth[:, 1] + groundtruth[:, 4], label = 'groundtruth', linestyle='--', color='black', lw='0.8')
+        ax.plot(times, forces[:, 1], label = 'prediction', color='black')
+        ax.set_title('y-axis')
+        ax.set_ylabel(r'Normalized force $[N/kg=m/s^{2}]$')
         plot_events(ax, True, True)
         if display_background:
             color_background(ax, time_left_on_ground, time_right_on_ground, times)
         ax = plt.subplot(313)
-        ax.plot(time_grdtruth, groundtruth[:, 2] + groundtruth[:, 5], label = 'groundtruth')
-        ax.plot(times, forces[:, 2], label = 'prediction')
-        ax.set_title('Ground force (z-axis)')
+        ax.plot(time_grdtruth, groundtruth[:, 2] + groundtruth[:, 5], label='groundtruth', linestyle='--', color='black', lw='0.8')
+        ax.plot(times, forces[:, 2], label = 'prediction', color='black')
+        ax.set_title('z-axis')
+        ax.set_xlabel('Time')
         plot_events(ax, True, True)
         if display_background:
             color_background(ax, time_left_on_ground, time_right_on_ground, times)
@@ -400,50 +403,55 @@ def plot_results(time_grdtruth = None, groundtruth = None, groundtruth_moments =
         plt.figure()
         plt.suptitle('Left foot')
         ax = plt.subplot(311)
-        ax.plot(time_grdtruth, groundtruth[:, 3], label = 'groundtruth')
-        ax.plot(times, left_forces[:, 0], label = 'prediction')
-        ax.set_title('Ground force (x-axis)')
+        ax.plot(time_grdtruth, groundtruth[:, 3], label = 'groundtruth', linestyle='--', color='black', lw='0.8')
+        ax.plot(times, left_forces[:, 0], label = 'prediction', color='g')
+        ax.set_title('x-axis')
         plot_events(ax, True, False)
         if display_background:
-            color_background(ax, time_left_on_ground, time_right_on_ground, times)
+            color_background(ax, time_left_on_ground, time_right_on_ground, times, True, False)
         ax = plt.subplot(312)
-        ax.plot(time_grdtruth, groundtruth[:, 4], label = 'groundtruth')
-        ax.plot(times, left_forces[:, 1], label = 'prediction')
-        ax.set_title('Ground force (y-axis)')
+        ax.plot(time_grdtruth, groundtruth[:, 4], label = 'groundtruth', linestyle='--', color='black', lw='0.8')
+        ax.plot(times, left_forces[:, 1], label = 'prediction', color='g')
+        ax.set_title('y-axis')
+        ax.set_ylabel(r'Normalized force $[N/kg=m/s^{2}]$')
         plot_events(ax, True, False)
         if display_background:
-            color_background(ax, time_left_on_ground, time_right_on_ground, times)
+            color_background(ax, time_left_on_ground, time_right_on_ground, times, True, False)
         ax = plt.subplot(313)
-        ax.plot(time_grdtruth, groundtruth[:, 5], label = 'groundtruth')
-        ax.plot(times, left_forces[:, 2], label = 'prediction')
-        ax.set_title('Ground force (z-axis)')
+        ax.plot(time_grdtruth, groundtruth[:, 5], label = 'groundtruth', linestyle='--', color='black', lw='0.8')
+        ax.plot(times, left_forces[:, 2], label = 'prediction', color='g')
+        ax.set_title('z-axis')
+        ax.set_xlabel('Time')
         plot_events(ax, True, False)
         if display_background:
-            color_background(ax, time_left_on_ground, time_right_on_ground, times)
+            color_background(ax, time_left_on_ground, time_right_on_ground, times, True, False)
 
         plt.figure()
         plt.suptitle('Right foot')
         ax = plt.subplot(311)
-        ax.plot(time_grdtruth, groundtruth[:, 0], label = 'groundtruth')
-        ax.plot(times, right_forces[:, 0], label = 'prediction')
-        ax.set_title('Ground force (x-axis)')
+        ax.plot(time_grdtruth, groundtruth[:, 0], label = 'groundtruth', linestyle='--', color='black', lw='0.8')
+        ax.plot(times, right_forces[:, 0], label = 'prediction', color='b')
+        ax.set_title('x-axis')
         plot_events(ax, False, True)
         if display_background:
-            color_background(ax, time_left_on_ground, time_right_on_ground, times)
+            color_background(ax, time_left_on_ground, time_right_on_ground, times, False, True)
         ax = plt.subplot(312)
-        ax.plot(time_grdtruth, groundtruth[:, 1], label = 'groundtruth')
-        ax.plot(times, right_forces[:, 1], label = 'prediction')
-        ax.set_title('Ground force (y-axis)')
+        ax.plot(time_grdtruth, groundtruth[:, 1], label = 'groundtruth', linestyle='--', color='black', lw='0.8')
+        ax.plot(times, right_forces[:, 1], label = 'prediction', color='b')
+        ax.set_title('y-axis')
+        ax.set_ylabel(r'Normalized force $[N/kg=m/s^{2}]$')
         plot_events(ax, False, True)
         if display_background:
-            color_background(ax, time_left_on_ground, time_right_on_ground, times)
+            color_background(ax, time_left_on_ground, time_right_on_ground, times, False, True)
         ax = plt.subplot(313)
-        ax.plot(time_grdtruth, groundtruth[:, 2], label = 'groundtruth')
-        ax.plot(times, right_forces[:, 2], label = 'prediction')
-        ax.set_title('Ground force (z-axis)')
+        ax.plot(time_grdtruth, groundtruth[:, 2], label='groundtruth', linestyle='--', color='black', lw='0.8')
+        ax.plot(times, right_forces[:, 2], label = 'prediction', color='b')
+        ax.set_xlabel('Time')
+        ax.set_title('z-axis')
         plot_events(ax, False, True)
         if display_background:
-            color_background(ax, time_left_on_ground, time_right_on_ground, times)
+            color_background(ax, time_left_on_ground, time_right_on_ground, times, False, True)
+
     if groundtruth_moments is not None and \
         time_grdtruth is not None and \
         moments is not None and \
@@ -454,25 +462,27 @@ def plot_results(time_grdtruth = None, groundtruth = None, groundtruth_moments =
         left_moments = np.asarray(left_moments)
         right_moments = np.asarray(right_moments)
         plt.figure()
-        plt.suptitle('Total moments')
+        plt.suptitle('Total ground moment')
         ax = plt.subplot(311)
-        ax.plot(time_grdtruth, groundtruth_moments[:, 0] + groundtruth_moments[:, 3], label = 'groundtruth')
+        ax.plot(time_grdtruth, groundtruth_moments[:, 0] + groundtruth_moments[:, 3], label = 'groundtruth', linestyle='--', color='black', lw='0.8')
         ax.plot(times, moments[:, 0], label = 'prediction')
-        ax.set_title('Ground moments (x-axis)')
+        ax.set_title('x-axis')
         plot_events(ax, True, True)
         if display_background:
             color_background(ax, time_left_on_ground, time_right_on_ground, times)
         ax = plt.subplot(312)
-        ax.plot(time_grdtruth, groundtruth_moments[:, 1] + groundtruth_moments[:, 4], label = 'groundtruth')
+        ax.plot(time_grdtruth, groundtruth_moments[:, 1] + groundtruth_moments[:, 4], label = 'groundtruth', linestyle='--', color='black', lw='0.8')
         ax.plot(times, moments[:, 1], label = 'prediction')
-        ax.set_title('Ground moments (y-axis)')
+        ax.set_title('y-axis')
+        ax.set_ylabel(r'Normalized moment $[Nm/(kg\cdot m)=m/s^{2}]$')
         plot_events(ax, True, True)
         if display_background:
             color_background(ax, time_left_on_ground, time_right_on_ground, times)
         ax = plt.subplot(313)
-        ax.plot(time_grdtruth, groundtruth_moments[:, 2] + groundtruth_moments[:, 5], label = 'groundtruth')
+        ax.plot(time_grdtruth, groundtruth_moments[:, 2] + groundtruth_moments[:, 5], label='groundtruth', linestyle='--', color='black', lw='0.8')
         ax.plot(times, moments[:, 2], label = 'prediction')
-        ax.set_title('Ground moments (z-axis)')
+        ax.set_title('z-axis')
+        ax.set_xlabel('Time')
         plot_events(ax, True, True)
         if display_background:
             color_background(ax, time_left_on_ground, time_right_on_ground, times)
@@ -480,50 +490,54 @@ def plot_results(time_grdtruth = None, groundtruth = None, groundtruth_moments =
         plt.figure()
         plt.suptitle('Left foot')
         ax = plt.subplot(311)
-        ax.plot(time_grdtruth, groundtruth_moments[:, 3], label = 'groundtruth')
-        ax.plot(times, left_moments[:, 0], label = 'prediction')
-        ax.set_title('Ground moments (x-axis)')
+        ax.plot(time_grdtruth, groundtruth_moments[:, 3], label = 'groundtruth', linestyle='--', color='black', lw='0.8')
+        ax.plot(times, left_moments[:, 0], label = 'prediction', color='g')
+        ax.set_title('x-axis')
         plot_events(ax, True, False)
         if display_background:
-            color_background(ax, time_left_on_ground, time_right_on_ground, times)
+            color_background(ax, time_left_on_ground, time_right_on_ground, times, True, False)
         ax = plt.subplot(312)
-        ax.plot(time_grdtruth, groundtruth_moments[:, 4], label = 'groundtruth')
-        ax.plot(times, left_moments[:, 1], label = 'prediction')
-        ax.set_title('Ground moments (y-axis)')
+        ax.plot(time_grdtruth, groundtruth_moments[:, 4], label = 'groundtruth', linestyle='--', color='black', lw='0.8')
+        ax.plot(times, left_moments[:, 1], label = 'prediction', color='g')
+        ax.set_title('y-axis')
+        ax.set_ylabel(r'Normalized moment $[Nm/(kg\cdot m)=m/s^{2}]$')
         plot_events(ax, True, False)
         if display_background:
-            color_background(ax, time_left_on_ground, time_right_on_ground, times)
+            color_background(ax, time_left_on_ground, time_right_on_ground, times, True, False)
         ax = plt.subplot(313)
-        ax.plot(time_grdtruth, groundtruth_moments[:, 5], label = 'groundtruth')
-        ax.plot(times, left_moments[:, 2], label = 'prediction')
-        ax.set_title('Ground moments (z-axis)')
+        ax.plot(time_grdtruth, groundtruth_moments[:, 5], label = 'groundtruth', linestyle='--', color='black', lw='0.8')
+        ax.plot(times, left_moments[:, 2], label = 'prediction', color='g')
+        ax.set_title('z-axis')
+        ax.set_xlabel('Time')
         plot_events(ax, True, False)
         if display_background:
-            color_background(ax, time_left_on_ground, time_right_on_ground, times)
+            color_background(ax, time_left_on_ground, time_right_on_ground, times, True, False)
 
         plt.figure()
         plt.suptitle('Right foot')
         ax = plt.subplot(311)
-        ax.plot(time_grdtruth, groundtruth_moments[:, 0], label = 'groundtruth')
-        ax.plot(times, right_moments[:, 0], label = 'prediction')
-        ax.set_title('Ground moments (x-axis)')
+        ax.plot(time_grdtruth, groundtruth_moments[:, 0], label = 'groundtruth', linestyle='--', color='black', lw='0.8')
+        ax.plot(times, right_moments[:, 0], label = 'prediction', color='b')
+        ax.set_title('x-axis')
         plot_events(ax, False, True)
         if display_background:
-            color_background(ax, time_left_on_ground, time_right_on_ground, times)
+            color_background(ax, time_left_on_ground, time_right_on_ground, times, False, True)
         ax = plt.subplot(312)
-        ax.plot(time_grdtruth, groundtruth_moments[:, 1], label = 'groundtruth')
-        ax.plot(times, right_moments[:, 1], label = 'prediction')
-        ax.set_title('Ground moments (y-axis)')
+        ax.plot(time_grdtruth, groundtruth_moments[:, 1], label = 'groundtruth', linestyle='--', color='black', lw='0.8')
+        ax.plot(times, right_moments[:, 1], label = 'prediction', color='b')
+        ax.set_title('y-axis')
+        ax.set_ylabel(r'Normalized moment $[Nm/(kg\cdot m)=m/s^{2}]$')
         plot_events(ax, False, True)
         if display_background:
-            color_background(ax, time_left_on_ground, time_right_on_ground, times)
+            color_background(ax, time_left_on_ground, time_right_on_ground, times, False, True)
         ax = plt.subplot(313)
-        ax.plot(time_grdtruth, groundtruth_moments[:, 2], label = 'groundtruth')
-        ax.plot(times, right_moments[:, 2], label = 'prediction')
-        ax.set_title('Ground moments (z-axis)')
+        ax.plot(time_grdtruth, groundtruth_moments[:, 2], label='groundtruth', linestyle='--', color='black', lw='0.8')
+        ax.plot(times, right_moments[:, 2], label = 'prediction', color='b')
+        ax.set_title('z-axis')
+        ax.set_xlabel('Time')
         plot_events(ax, False, True)
         if display_background:
-            color_background(ax, time_left_on_ground, time_right_on_ground, times)
+            color_background(ax, time_left_on_ground, time_right_on_ground, times, False, True)
 
     if cops is not None and \
         right_foot_position is not None and \
@@ -540,6 +554,7 @@ def plot_results(time_grdtruth = None, groundtruth = None, groundtruth_moments =
         ax.plot(times, right_foot_position[:, 0, 0], label='right foot calcn')
         ax.plot(times, left_foot_position[:, 1, 0], label='left foot toes')
         ax.plot(times, right_foot_position[:, 1, 0], label='right foot toes')
+        ax.set_ylabel('Position [m]')
         ax.set_title('x-axis')
         if display_background:
             color_background(ax, time_left_on_ground, time_right_on_ground, times)
@@ -550,6 +565,8 @@ def plot_results(time_grdtruth = None, groundtruth = None, groundtruth_moments =
         ax.plot(times, right_foot_position[:, 0, 2], label='right foot calcn')
         ax.plot(times, left_foot_position[:, 1, 2], label='left foot toes')
         ax.plot(times, right_foot_position[:, 1, 2], label='right foot toes')
+        ax.set_xlabel('Time')
+        ax.set_ylabel('Position [m]')
         ax.set_title('z-axis')
         if display_background:
             color_background(ax, time_left_on_ground, time_right_on_ground, times)
@@ -563,41 +580,50 @@ def plot_results(time_grdtruth = None, groundtruth = None, groundtruth_moments =
         cops_r = np.asarray(cops_r)
         plt.figure()
         ax = plt.subplot(221)
-        ax.plot(time_grdtruth, cops[:, 0], label='groundtruth')
-        ax.plot(times, cops_r[:, 0], label='estimation')
-        ax.set_title('Right (x-axis)')
+        ax.plot(time_grdtruth, cops[:, 0], label='groundtruth', linestyle='--', color='black', lw='0.8')
+        ax.plot(times, cops_r[:, 0], label='estimation', color='b')
+        ax.set_title('Right foot (x-axis)')
+        ax.set_ylabel('Position [m]')
+        plot_events(ax, False, True)
         if display_background:
-            color_background(ax, time_left_on_ground, time_right_on_ground, times)
+            color_background(ax, time_left_on_ground, time_right_on_ground, times, False, True, legend=False)
 
         ax = plt.subplot(222)
-        ax.plot(time_grdtruth, cops[:, 2], label='groundtruth')
-        ax.plot(times, cops_r[:, 2], label='estimation')
-        ax.set_title('Right (z-axis)')
+        ax.plot(time_grdtruth, cops[:, 2], label='groundtruth', linestyle='--', color='black', lw='0.8')
+        ax.plot(times, cops_r[:, 2], label='estimation', color='b')
+        ax.set_title('Right foot (z-axis)')
+        plot_events(ax, False, True)
         if display_background:
-            color_background(ax, time_left_on_ground, time_right_on_ground, times)
+            color_background(ax, time_left_on_ground, time_right_on_ground, times, False, True)
 
         ax = plt.subplot(223)
-        ax.plot(time_grdtruth, cops[:, 3], label='groundtruth')
-        ax.plot(times, cops_l[:, 0], label='estimation')
-        ax.set_title('Left (x-axis)')
+        ax.plot(time_grdtruth, cops[:, 3], label='groundtruth', linestyle='--', color='black', lw='0.8')
+        ax.plot(times, cops_l[:, 0], label='estimation', color='g')
+        ax.set_title('Left foot (x-axis)')
+        ax.set_ylabel('Position [m]')
+        ax.set_xlabel('Time')
+        plot_events(ax, True, False)
         if display_background:
-            color_background(ax, time_left_on_ground, time_right_on_ground, times)
+            color_background(ax, time_left_on_ground, time_right_on_ground, times, True, False, legend=False)
 
         ax = plt.subplot(224)
-        ax.plot(time_grdtruth, cops[:, 5], label='groundtruth')
-        ax.plot(times, cops_l[:, 2], label='estimation')
-        ax.set_title('Left (z-axis)')
+        ax.plot(time_grdtruth, cops[:, 5], label='groundtruth', linestyle='--', color='black', lw='0.8')
+        ax.plot(times, cops_l[:, 2], label='estimation', color='g')
+        ax.set_title('Left foot (z-axis)')
+        ax.set_xlabel('Time')
+        plot_events(ax, True, False)
         if display_background:
-            color_background(ax, time_left_on_ground, time_right_on_ground, times)
+            color_background(ax, time_left_on_ground, time_right_on_ground, times, True, False)
 
     if right_foot_usage is not None:
         right_foot_usage = np.asarray(right_foot_usage)
         plt.figure()
         ax = plt.subplot(111)
-        ax.plot(times, right_foot_usage*100, label='Right foot')
-        ax.plot(times, 100 - right_foot_usage*100, label='Left foot')
-        ax.set_title('Pourcentage of force applied on each foot')
-        ax.set_ylabel('Weighting factor (in %)')
+        ax.plot(times, right_foot_usage*100, label='Right foot', color='b')
+        ax.plot(times, 100 - right_foot_usage*100, label='Left foot', color='g')
+        ax.set_title('Percentage of distribution on each foot')
+        ax.set_ylabel('Weighting factor [%]')
+        ax.set_xlabel('Time')
         plot_events(ax, True, True)
         if display_background:
             color_background(ax, time_left_on_ground, time_right_on_ground, times)
@@ -612,42 +638,73 @@ def plot_results(time_grdtruth = None, groundtruth = None, groundtruth_moments =
         plt.close('all')
 
 
-def color_background(ax, left_idx, right_idx, times):
-    l = 0
-    for i in left_idx:
-        if i+1 < len(times):
-            ax.axvspan(times[i], times[i+1], facecolor='g', alpha=0.2, label="_"*l + "Left foot on groud")
-            l = 1
-    l = 0
-    for i in right_idx:
-        if i+1 < len(times):
-            ax.axvspan(times[i], times[i+1], facecolor='r', alpha=0.2, label="_"*l + "Right foot on ground")
-            l = 1
-
+def color_background(ax, left_idx, right_idx, times, left = True, right = True, legend=True):
+    if left:
+        l = 0
+        for i in left_idx:
+            if i+1 < len(times):
+                ax.axvspan(times[i], times[i+1], facecolor='g', alpha=0.2, label="_"*l + "Left foot on ground")
+                l = 1
+    if right:
+        l = 0
+        for i in right_idx:
+            if i+1 < len(times):
+                ax.axvspan(times[i], times[i+1], facecolor='b', alpha=0.2, label="_"*l + "Right foot on ground")
+                l = 1
     box = ax.get_position()
     ax.set_position([box.x0, box.y0, box.width*0.7, box.height])
-    legend_x = 1
-    legend_y = 0.5
-    ax.legend(loc='center left', bbox_to_anchor=(legend_x, legend_y))
+    if legend:
+        legend_x = 1
+        legend_y = 0.5
+        #ax.legend(loc='center left', bbox_to_anchor=(legend_x, legend_y))
+        handles, labels = ax.get_legend_handles_labels()
+        if left and right:
+            patch = mpatches.Patch(color='#B4C6DC')
+            handles = list(handles)
+            labels = list(labels)
+            handles.append(patch)
+            labels.append('Double stance phase')
+        # sort both labels and handles by labels
+        labels, handles = zip(*sorted(zip(labels, handles), key=lambda t: t[0]))
+        ax.legend(handles, labels, loc='center left', bbox_to_anchor=(legend_x, legend_y))
 
 
 def plot_events(ax, left=True, right=True):
-    heel_strike_l = [0.01, 1.24]
-    heel_strike_r = [0.62, 1.84]
-    toes_off_l = [0.75, 2]
-    toes_off_r = [0.14, 1.39]
+    heel_strike_l = [0.0, 1.20, 2.41]
+    heel_strike_r = [0.58, 1.80]
+    toes_off_l = [0.83, 2.04]
+    toes_off_r = [0.21, 1.44]
 
+    #pos = ax.get_xticks()
+    #labels = list(pos)
+    pos = np.array([])
+    labels = []
     if right:
         for i, val in enumerate(heel_strike_r):
-            ax.axvline(val, label="_"*i + "Right heel strike", linestyle='-.', color='r', lw='0.8')
+            #ax.axvline(val, label="_"*i + "Right heel strike", linestyle='-.', color='b', lw='0.8')
+            #ax.axvline(val, linestyle='-.', color='b', lw='0.8')
+            ax.axvline(val, linestyle=':', color='black', lw='0.8')
+            pos = np.append(pos, val)
+            labels.append(r'$t_{HSR}$')
         for i, val in enumerate(toes_off_r):
-            ax.axvline(val, label="_"*i + "Right toes off", linestyle=':', color='r', lw='0.8')
+            #ax.axvline(val, label="_"*i + "Right toes off", linestyle=':', color='b', lw='0.8')
+            ax.axvline(val, linestyle=':', color='black', lw='0.8')
+            pos = np.append(pos, val)
+            labels.append(r'$t_{TOR}$')
     if left:
         for i, val in enumerate(heel_strike_l):
-            ax.axvline(val, label="_"*i + "Left heel strike", linestyle='-.', color='g', lw='0.8')
+            #ax.axvline(val, label="_"*i + "Left heel strike", linestyle='-.', color='g', lw='0.8')
+            ax.axvline(val, linestyle=':', color='black', lw='0.8')
+            pos = np.append(pos, val)
+            labels.append(r'$t_{HSL}$')
         for i, val in enumerate(toes_off_l):
-            ax.axvline(val, label="_"*i + "Left toes off", linestyle=':', color='g', lw='0.8')
-
+            #ax.axvline(val, label="_"*i + "Left toes off", linestyle=':', color='g', lw='0.8')
+            ax.axvline(val, linestyle=':', color='black', lw='0.8')
+            pos = np.append(pos, val)
+            labels.append(r'$t_{TOL}$')
+    ax.set_xticks(pos)
+    ax.set_xticklabels(labels)
+    ax.tick_params(axis='x', rotation=45)
 
 def moving_average(forces, width=5):
     out = np.copy(np.array(forces))
@@ -672,6 +729,8 @@ def find_bornes(right_foot_usage):
         last_id = e
     couple.append(last_id)
     bornes.append(couple)
+    #times = [el * 2.5 / len(right_foot_usage) for couple in bornes for el in couple]
+    #print(times)
     return bornes
 
 
@@ -702,35 +761,120 @@ def find_cop(bodies, points, state):
        return cop
 
 
-def compare_results(time_grdtruth, groundtruth, groundtruth_m, cops, times, left_forces, right_forces, left_moments, right_moments, cops_l, cops_r):
-    rmse_forces = np.array([0,0,0,0,0,0], dtype=np.float64)
+def compare_results(time_grdtruth, groundtruth, groundtruth_m, cops, times, left_forces, right_forces, left_moments, right_moments, cops_l = None, cops_r = None):
+    rmse, nrmse = compute_rmse(time_grdtruth, groundtruth, groundtruth_m, cops, times, left_forces, right_forces, left_moments, right_moments, cops_l, cops_r)
+    print_nrmse(*rmse, *nrmse)
+    correlations = compute_correlation(time_grdtruth, groundtruth, groundtruth_m, cops, times, left_forces, right_forces, left_moments, right_moments, cops_l, cops_r)
+    print_correlation(*correlations)
+
+
+def compute_rmse(time_grdtruth, groundtruth, groundtruth_m, cops, times, left_forces, right_forces, left_moments, right_moments, cops_l=None, cops_r=None):
+    rmse_forces = np.array([0, 0, 0, 0, 0, 0], dtype=np.float64)
     rmse_moments = np.array([0, 0, 0, 0, 0, 0], dtype=np.float64)
-    rmse_cops = np.array([0,0,0,0,0,0], dtype=np.float64)
-    for time, force_l, force_r, moment_l, moment_r, cop_l, cop_r in zip(times, left_forces, right_forces, left_moments, right_moments, cops_l, cops_r): 
+    if cops is not None:
+        rmse_cops = np.array([0, 0, 0, 0, 0, 0], dtype=np.float64)
+    else:
+        rmse_cops = None
+        nrmse_cops = None
+        cops_l = np.zeros_like(times)
+        cops_r = np.zeros_like(times)
+    for time, force_l, force_r, moment_l, moment_r, cop_l, cop_r in zip(times, left_forces, right_forces, left_moments, right_moments, cops_l, cops_r):
         idx = find_closest_time(time_grdtruth, time)
         rmse_forces += np.concatenate(((force_r - groundtruth[idx, :3])**2, (force_l - groundtruth[idx, 3:])**2), axis=0)
         rmse_moments += np.concatenate(((moment_r - groundtruth_m[idx, :3])**2, (moment_l - groundtruth_m[idx, 3:])**2), axis=0)
-        rmse_cops += np.concatenate(((cop_r - cops[idx, :3])**2, (cop_l - cops[idx, 3:])**2), axis=0)
+        if cops is not None:
+            rmse_cops += np.concatenate(((cop_r - cops[idx, :3])**2, (cop_l - cops[idx, 3:])**2), axis=0)
 
+    rmse_forces = np.sqrt(rmse_forces) / times.shape[0]
+    rmse_moments = np.sqrt(rmse_moments) / times.shape[0]
+    nrmse_forces = rmse_forces / (np.max(groundtruth, axis=0) - np.min(groundtruth, axis=0))
+    nrmse_moments = rmse_moments / (np.max(groundtruth_m, axis=0) - np.min(groundtruth_m, axis=0))
+    if cops is not None:
+        rmse_cops = np.sqrt(rmse_cops) / times.shape[0]
+        nrmse_cops = rmse_cops / np.where((np.max(cops, axis=0) - np.min(cops, axis=0)) == 0, 1, (np.max(cops, axis=0) - np.min(cops, axis=0)))
+    return (rmse_forces, rmse_moments, rmse_cops), (nrmse_forces, nrmse_moments, nrmse_cops)
 
-    rmse_forces /= (np.max(groundtruth, axis=0) - np.min(groundtruth, axis=0))**2 * times.shape[0]
-    rmse_moments /= (np.max(groundtruth_m, axis=0) - np.min(groundtruth_m, axis=0))**2 * times.shape[0]
-    rmse_cops /= np.where((np.max(cops, axis=0) - np.min(cops, axis=0)) == 0, 1, (np.max(cops, axis=0) - np.min(cops, axis=0)))**2 * times.shape[0]
-    print_rmse(rmse_forces, rmse_moments, rmse_cops)
-
-def find_closest_time(times, time):
-    idx = (np.abs(times - time)).argmin() 
-    return idx
-
-def print_rmse(rmse_forces, rmse_moments, rmse_cops):
+def print_nrmse(rmse_forces, rmse_moments, rmse_cops, nrmse_forces, nrmse_moments, nrmse_cops):
     legend = ['right, x', 'right, y', 'right, z', 'left, x', 'left, y', 'left, z']
+    forces = 'RMSE forces:\n'
+    moments = 'RMSE moments:\n'
+    cops = 'RMSE cops:\n'
+    for l, f, m, c in zip(legend, rmse_forces, rmse_moments, rmse_cops if rmse_cops is not None else np.zeros_like(rmse_moments)):
+        forces += l + ' = {:.04f} N\n'.format(f)
+        moments += l + ' = {:.04f} Nm\n'.format(m)
+        if rmse_cops is not None:
+            cops += l + ' = {:.04f} cm\n'.format(c*1e2)
+    print(forces)
+    print(moments)
+    if rmse_cops is not None:
+        print(cops)
+    
     forces = 'nRMSE forces:\n'
     moments = 'nRMSE moments:\n'
     cops = 'nRMSE cops:\n'
-    for l, f, m, c in zip(legend, rmse_forces, rmse_moments, rmse_cops):
+    for l, f, m, c in zip(legend, nrmse_forces, nrmse_moments, nrmse_cops if nrmse_cops is not None else np.zeros_like(nrmse_moments)):
         forces += l +' = {:.02f}%\n'.format(f*100)
         moments += l + ' = {:.02f}%\n'.format(m*100)
-        cops += l + ' = {:.02f}%\n'.format(c*100)
+        if nrmse_cops is not None:
+            cops += l + ' = {:.02f}%\n'.format(c*100)
     print(forces)
     print(moments)
-    print(cops)
+    if nrmse_cops is not None:
+        print(cops)
+
+
+def compute_correlation(time_grdtruth, groundtruth, groundtruth_m, cops, times, left_forces, right_forces, left_moments, right_moments, cops_l, cops_r):
+    corr_forces = np.array([0, 0, 0, 0, 0, 0], dtype=np.float64)
+    corr_moments = np.array([0, 0, 0, 0, 0, 0], dtype=np.float64)
+    if cops is not None:
+        corr_cops = np.array([0, 0, 0, 0, 0, 0], dtype=np.float64)
+    else:
+        corr_cops = None
+
+    idx = find_closest_time(time_grdtruth, times)
+    for i in range(3):
+        i_ = [i] * len(idx)
+        i_3 = [i+3] * len(idx)
+        corr_forces[i] = np.corrcoef(right_forces[:, i], groundtruth[idx, i_])[0,1]
+        corr_forces[i+3] = np.corrcoef(left_forces[:, i], groundtruth[idx, i_3])[0,1]
+        corr_moments[i] = np.corrcoef(right_moments[:, i], groundtruth_m[idx, i_])[0,1]
+        corr_moments[i+3] = np.corrcoef(right_moments[:, i], groundtruth_m[idx, i_3])[0,1]
+        if cops is not None:
+            corr_cops[i] = np.corrcoef(cops_r[:, i], cops[idx, i_])[0,1]
+            corr_cops[i+3] = np.corrcoef(cops_l[:, i], cops[idx, i_3])[0, 1]
+    return corr_forces, corr_moments, corr_cops
+
+
+def print_correlation(corr_forces, corr_moments, corr_cops):
+    legend = ['right, x', 'right, y', 'right, z', 'left, x', 'left, y', 'left, z']
+    forces = 'Correlation forces:\n'
+    moments = 'Correlation moments:\n'
+    cops = 'Correlation cops:\n'
+    for l, f, m, c in zip(legend, corr_forces, corr_moments, corr_cops if corr_cops is not None else np.zeros_like(corr_moments)):
+        forces += l + ' = {:.02f}\n'.format(f)
+        moments += l + ' = {:.02f}\n'.format(m)
+        if corr_cops is not None:
+            cops += l + ' = {:.02f}\n'.format(c)
+    print(forces)
+    print(moments)
+    if corr_cops is not None:
+        print(cops)
+
+
+def find_closest_time(times, times_ref):
+    if isinstance(times_ref, float):
+        return np.argmin(np.abs(times - times_ref))
+    idx = []
+    for time in times_ref:
+        idx.append(np.argmin(np.abs(times - time)))
+    return idx
+
+def compare_data_muscle(groundtruth, exp, filename):
+    N = min(len(groundtruth), len(exp))
+    diff = (groundtruth - exp)
+    RMSE = np.sqrt((diff**2).sum()/N)
+    rRMSE = RMSE / (groundtruth.max() - groundtruth.min())
+    results = pd.DataFrame([RMSE], columns=groundtruth.columns)
+    results = results.append(rRMSE*100, ignore_index=True)
+    print(results)
+    results.to_csv(filename, index=False)

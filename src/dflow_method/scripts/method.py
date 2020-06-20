@@ -23,6 +23,9 @@ parentDir = os.path.dirname(fileDir)
 #initilization
 model_file, ik_data, id_data, u, a, exp_data = import_from_storage(parentDir)
 
+
+weight = 72.6  # kg
+height = 1.8  # m
 model = opensim.Model(model_file)
 state = model.initSystem()
 coordinate_set = model.updCoordinateSet()
@@ -123,27 +126,28 @@ for i in range(ik_data.shape[0]):
     d_r = minDistance1d(CoP, right_state[:, 2], pelvis_pos)
     w_r = d_l / (d_l + d_r)
     w_l = d_r / (d_l + d_r)
-
+    F_e /= weight
+    M_e /= weight * height
     forces.append(F_e)
     moments.append(M_e)
     if left_ground and right_ground:
         left_forces.append(F_e * w_l)
         right_forces.append(F_e * w_r)
-        left_moments.append(F_e * w_l)
-        right_moments.append(F_e * w_r)
+        left_moments.append(M_e * w_l)
+        right_moments.append(M_e * w_r)
         right_foot_usage.append(w_r)
 
     elif left_ground and not right_ground :
         left_forces.append(F_e)
         right_forces.append([0, 0, 0])
-        left_moments.append(F_e)
+        left_moments.append(M_e)
         right_moments.append([0, 0, 0])
         right_foot_usage.append(0)
     elif not left_ground and right_ground :
         right_forces.append(F_e)
         left_forces.append([0, 0, 0])
         left_moments.append([0, 0, 0])
-        right_moments.append(F_e)
+        right_moments.append(M_e)
         right_foot_usage.append(1)
     else:
         right_forces.append([0, 0, 0])
@@ -166,6 +170,20 @@ for i in range(exp_data.shape[0]):
     grdtruth_m = [exp_data.iloc[i][name] for name in grdtruth_moments]
     groundtruth.append(grdtruth)
     groundtruth_m.append(grdtruth_m)
+
+
+times = np.asarray(times)
+time_grdtruth = np.asarray(time_grdtruth)
+groundtruth = np.asarray(groundtruth) / weight
+groundtruth_m = np.asarray(groundtruth_m) / (weight*height)
+forces = np.asarray(forces)
+left_forces = np.asarray(left_forces)
+right_forces = np.asarray(right_forces)
+moments = np.asarray(moments)
+left_moments = np.asarray(left_moments) * np.array([0.0001, 1, 0.0001])
+right_moments = np.asarray(right_moments) * np.array([0.0001, 1, 0.0001])
+
+compare_results(time_grdtruth, groundtruth, groundtruth_m, None, times, left_forces, right_forces, left_moments, right_moments)
 
 plot_results(time_grdtruth, groundtruth, groundtruth_m, times, \
     time_left_on_ground, time_right_on_ground, forces, left_forces, right_forces, \

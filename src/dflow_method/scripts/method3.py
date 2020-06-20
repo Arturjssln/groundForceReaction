@@ -64,30 +64,31 @@ cop_bodies_right = [calcn_r] * 9 + [toes_r] * 2
 cop_points_r = [opensim.Vec3(0, -0.005, 0),  # Heel
                 opensim.Vec3(0.05, -0.005, -0.025),  # Heel
                 opensim.Vec3(0.05, -0.005, 0.025),  # Heel
-                opensim.Vec3(0.1, -0.005, 0),  # Midfoot
                 opensim.Vec3(0.1, -0.005, 0.04),  # Midfoot
                 opensim.Vec3(0.1, -0.005, -0.04),  # Midfoot
+                opensim.Vec3(0.15, -0.005, 0.05),  # Midfoot
+                opensim.Vec3(0.15, -0.005, -0.05),  # Midfoot
                 opensim.Vec3(0.2, -0.005, -0.05),  # Forefoot
-                opensim.Vec3(0.2, -0.005, 0),  # Forefoot
                 opensim.Vec3(0.2, -0.005, 0.05),  # Forefoot
                 opensim.Vec3(0.07, 0, -0.02), # Toes
                 opensim.Vec3(0.04, 0, 0.025)]  # Toes
 cop_points_l = [opensim.Vec3(0, -0.005, 0),  # Heel
                 opensim.Vec3(0.05, -0.005, -0.025),  # Heel
                 opensim.Vec3(0.05, -0.005, 0.025),  # Heel
-                opensim.Vec3(0.1, -0.005, 0),  # Midfoot
                 opensim.Vec3(0.1, -0.005, 0.04),  # Midfoot
                 opensim.Vec3(0.1, -0.005, -0.04),  # Midfoot
+                opensim.Vec3(0.15, -0.005, 0.05),  # Midfoot
+                opensim.Vec3(0.15, -0.005, -0.05),  # Midfoot
                 opensim.Vec3(0.2, -0.005, -0.05),  # Forefoot
-                opensim.Vec3(0.2, -0.005, 0),  # Forefoot
                 opensim.Vec3(0.2, -0.005, 0.05),  # Forefoot
                 opensim.Vec3(0.07, 0, 0.02),  # Toes
                 opensim.Vec3(0.04, 0, -0.025)]  # Toes
 
-
+print(ik_data.shape, id_data.shape)
 assert(ik_data.shape == id_data.shape)
 assert(ik_data.shape[0] == u.shape[0])
-
+assert(len(cop_bodies_left) == len(cop_points_l))
+assert(len(cop_bodies_right) == len(cop_points_r))
 # Declare moment names
 moment = ['pelvis_list_moment', 'pelvis_rotation_moment', 'pelvis_tilt_moment']
 # Declare force names
@@ -166,7 +167,7 @@ for i in range(ik_data.shape[0]):
         right_foot_usage.append(0.5)
 
     forces.append(np.asarray(F_e) / weight)
-    moments.append(np.asarray(M_e) / (weight*height))
+    moments.append(np.asarray(M_e) * np.array([0.0001,1,0.0001])  / (weight*height))
 
     cop_l = find_cop(cop_bodies_left, cop_points_l, state)
     cop_r = find_cop(cop_bodies_right, cop_points_r, state)
@@ -178,10 +179,10 @@ spline_interpolation_(right_foot_usage)
 
 right_forces = np.asarray(forces) * np.asarray(right_foot_usage)[:, None] 
 left_forces = np.asarray(forces) * (1 - np.asarray(right_foot_usage))[:, None]
-#right_moments = np.asarray(moments) * np.asarray(right_foot_usage)[:, None] 
-#left_moments = np.asarray(moments) * (1 - np.asarray(right_foot_usage))[:, None] 
-right_moments = np.zeros_like(right_forces)
-left_moments = np.zeros_like(left_forces)
+right_moments = np.asarray(moments) * np.asarray(right_foot_usage)[:, None] 
+left_moments = np.asarray(moments) * (1 - np.asarray(right_foot_usage))[:, None] 
+#right_moments = np.zeros_like(right_forces)
+#left_moments = np.zeros_like(left_forces)
 
 #right_moments[:, 2] = - right_forces[:, 1] * np.array(cops_r)[:, 0] / height
 #left_moments[:, 2] = - left_forces[:, 1] * np.array(cops_l)[:, 0] / height
@@ -232,7 +233,7 @@ right_foot_usage = np.asarray(right_foot_usage)
 write_results('../results/prediction.mot', times, right_forces*weight, cops_r,
               left_forces*weight, cops_l, right_moments*weight*height, left_moments*weight*height)
 
-compare_results(time_grdtruth, groundtruth, groundtruth_m, cops, times, left_forces, right_forces, left_moments, right_moments, cops_l, cops_r)
+compare_results(time_grdtruth, groundtruth*weight, groundtruth_m*weight*height, cops, times, left_forces*weight, right_forces*weight, left_moments*weight*height, right_moments*weight*height, cops_l, cops_r)
 
 plot_results(time_grdtruth, groundtruth, groundtruth_m, times, time_left_on_ground, time_right_on_ground, forces, left_forces,
              right_forces, right_foot_usage=right_foot_usage, moments=moments, left_moments=left_moments, right_moments=right_moments,

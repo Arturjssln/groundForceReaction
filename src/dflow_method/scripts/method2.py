@@ -31,19 +31,30 @@ calcn_r = model.updBodySet().get('calcn_r')
 calcn_l = model.updBodySet().get('calcn_l')
 toes_r = model.updBodySet().get('toes_r')
 toes_l = model.updBodySet().get('toes_l')
-bodies_left = [calcn_l] * 9 + [toes_l]
-bodies_right = [calcn_r] * 9 + [toes_r]
-
-points_r = [opensim.Vec3(0, -0.005, 0), opensim.Vec3(0.1, -0.005, 0), 
-            opensim.Vec3(0.2, -0.005, 0), opensim.Vec3(0.1, -0.005, 0.05),
-            opensim.Vec3(0.2, -0.005, 0.05), opensim.Vec3(0.1, -0.005, -0.05),
-            opensim.Vec3(0.05, -0.005, -0.025), opensim.Vec3(0.05, -0.005, 0.025),
-            opensim.Vec3(0.05, -0.005, -0.025), opensim.Vec3(0.057, 0.0, -0.015)]
-points_l = [opensim.Vec3(0, -0.005, 0), opensim.Vec3(0.1, -0.005, 0), 
-            opensim.Vec3(0.2, -0.005, 0), opensim.Vec3(0.1, -0.005, 0.05),
-            opensim.Vec3(0.2, -0.005, 0.05), opensim.Vec3(0.1, -0.005, -0.05),
-            opensim.Vec3(0.05, -0.005, -0.025), opensim.Vec3(0.05, -0.005, 0.025),
-            opensim.Vec3(0.05, -0.005, -0.025), opensim.Vec3(0.057, 0.0, 0.015)]
+bodies_left = [calcn_l] * 9 + [toes_l] * 2
+bodies_right = [calcn_r] * 9 + [toes_r] * 2
+points_r = [opensim.Vec3(0, -0.005, 0),  # Heel
+            opensim.Vec3(0.05, -0.005, -0.025),  # Heel
+            opensim.Vec3(0.05, -0.005, 0.025),  # Heel
+            opensim.Vec3(0.1, -0.005, 0.04),  # Midfoot
+            opensim.Vec3(0.1, -0.005, -0.04),  # Midfoot
+            opensim.Vec3(0.15, -0.005, 0.05),  # Midfoot
+            opensim.Vec3(0.15, -0.005, -0.05),  # Midfoot
+            opensim.Vec3(0.2, -0.005, -0.05),  # Forefoot
+            opensim.Vec3(0.2, -0.005, 0.05),  # Forefoot
+            opensim.Vec3(0.07, 0, -0.02),  # Toes
+            opensim.Vec3(0.04, 0, 0.025)]  # Toes
+points_l = [opensim.Vec3(0, -0.005, 0),  # Heel
+            opensim.Vec3(0.05, -0.005, -0.025),  # Heel
+            opensim.Vec3(0.05, -0.005, 0.025),  # Heel
+            opensim.Vec3(0.1, -0.005, 0.04),  # Midfoot
+            opensim.Vec3(0.1, -0.005, -0.04),  # Midfoot
+            opensim.Vec3(0.15, -0.005, 0.05),  # Midfoot
+            opensim.Vec3(0.15, -0.005, -0.05),  # Midfoot
+            opensim.Vec3(0.2, -0.005, -0.05),  # Forefoot
+            opensim.Vec3(0.2, -0.005, 0.05),  # Forefoot
+            opensim.Vec3(0.07, 0, 0.02),  # Toes
+            opensim.Vec3(0.04, 0, -0.025)]  # Toes
 # Declare thresholds
 thresholds = (0.05, 0.1)
 
